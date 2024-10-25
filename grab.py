@@ -1,12 +1,15 @@
 import requests
 import json
+import urllib
 
 # https://docs.github.com/en/search-github/searching-on-github/searching-code
 def grab_github ():
     github_pat = open('github.pat', 'r').read().strip()
 
     u = "https://api.github.com/search/code"
-    f = "filename:sshd_config"
+    f = "filename:/sshd_config/"
+
+    print(urllib.parse.quote(f, safe=''))
 
     url = u + "?q=" + f + "&per_page=100"
 
