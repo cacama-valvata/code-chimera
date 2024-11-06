@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+
+import sys, os, glob, errno, subprocess
+import yaml
+import zipfile, zlib
+
+
+def main():
+  options = get_options()
+
+  congresses = options.get('congresses', None)
+  if not congresses:
+    print "Provide a --congresses option."
+    return
+
+  for congress in congresses.split(","):
+    process_congress(congress.strip())
+
+  exit(0)
+
+
+def process_congress(congress):
+  config = yaml.safe_load(open("config.yml", 'r'))
+  options = get_options()
+
+  original_wd = os.getcwd()
+  output_dir = os.path.join(original_wd, "output") # absolute path
+  mkdir_p(output_dir)
+
+  zipfile_name = "%s.zip" % congress
+  zipfile_path = os.path.join(output_dir, zipfile_name)
+
+  if os.path.exists(zipfile_path) and options.get('cache', False):
+    print "[%s] Using cached zip file..." % congress
+
+  else:
+    print "[%s] Zipping up JSON files..." % congress
+
+    data_dir = config['data']
+
+    # switch working directory to input data dir for relative globs
+    os.chdir(os.path.join(data_dir, congress))
+
+    # looks for JSON files 3 and 4 levels down
+    files = glob.glob("*/*/*/*.json") + glob.glob("*/*/*/*/*.json")
+
+    zf = zipfile.ZipFile(zipfile_path, "w", zipfile.ZIP_DEFLATED)
+    for f in files:
+      zf.write(f)
+    zf.close()
+
+    os.chdir(original_wd)
+
+
+  bucket = config['s3']['bucket']
+  s3cmd = config['s3']['s3cmd']
+  s3cfg = config['s3']['s3cfg']
+
+  print "[%s] Uploading file to S3..." % congress
+
+  os.system("%s --config=%s put -P %s %s/congress/data/%s" % (s3cmd, s3cfg, zipfile_path, bucket, zipfile_name))
+
+  print "[%s] Uploaded %s to S3." % (congress, zipfile_name)
+
+
+def get_options():
+  options = {}
+  for arg in sys.argv[1:]:
+    if arg.startswith("--"):
+      if "=" in arg:
+        key, value = arg.split('=')
+      else:
+        key, value = arg, True
+      key = key.split("--")[1]
+      options[key.lower()] = value
+  return options
+
+# mkdir -p in python, from:
+# http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
+def mkdir_p(path):
+  try:
+    os.makedirs(path)
+  except OSError as exc: # Python >2.5
+    if exc.errno == errno.EEXIST:
+      pass
+    else: 
+      raise
+
+# returns first year of the 2-year congress
+def year_for_congress(congress):
+  return ((2 * int(congress)) + 1788) - 1
+
+# adapted from http://code.activestate.com/recipes/576888-format-a-number-as-an-ordinal/
+def ordinal(value):
+  value = int(value)
+  if value % 100//10 != 1:
+    if value % 10 == 1:
+      ordval = u"%d%s" % (value, "st")
+    elif value % 10 == 2:
+      ordval = u"%d%s" % (value, "nd")
+    elif value % 10 == 3:
+      ordval = u"%d%s" % (value, "rd")
+    else:
+      ordval = u"%d%s" % (value, "th")
+  else:
+    ordval = u"%d%s" % (value, "th")
+
+  return ordval
+
+if __name__ == '__main__':
+  main()

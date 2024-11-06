@@ -1,6 +1,7 @@
 import requests
 import json
 import urllib
+from multiprocessing.dummy import Pool as ThreadPool
 
 # https://docs.github.com/en/search-github/searching-on-github/searching-code
 def grab_github ():
@@ -53,4 +54,26 @@ def grab_github ():
     #print(repos["total_count"])
     #print(json.dumps(repos, indent=4))
 
-grab_github()
+
+def dl_gh():
+    def repo_process(repo_url):
+        resdir = "results"
+        resfn = repo_url[18:].replace("/", "_")
+        
+        response = requests.get(repo_url.replace("blob", "raw"))
+        if response.status_code != 200:
+            return
+
+        with open(resdir + "/" + resfn, "w") as f:
+            f.write(response.text)
+
+        return
+
+    repos = open("github.list.output", "r").read().splitlines()
+    pool = ThreadPool(50)
+    pool.map(repo_process, repos)
+    print("done :3")
+
+
+#grab_github()
+dl_gh()

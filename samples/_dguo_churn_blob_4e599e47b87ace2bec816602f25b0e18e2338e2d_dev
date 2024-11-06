@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import argparse
+from subprocess import call
+import sys
+
+# pylint: disable=unused-argument
+
+def up(args):
+    try:
+        # Workaround for churn.egg-info being wiped out by the volume mount
+        # http://stackoverflow.com/q/31365864
+        call(['docker-compose', 'run', 'churn', 'bash', '-c',
+              'pip install --editable .'])
+        call(['docker-compose', 'run', 'churn'])
+    except OSError:
+        print('Please install Docker and Docker Compose.', file=sys.stderr)
+
+def down(args):
+    try:
+        call(['docker-compose', 'down', '--remove-orphans', '--rmi', 'local'])
+    except OSError:
+        print('Please install Docker and Docker Compose.', file=sys.stderr)
+
+def lint(args):
+    rc = call(['docker-compose', 'run', 'churn', 'bash', '-c',
+               'shopt -s globstar && pylint -rn ./**/*.py dev'])
+    exit(rc)
+
+def test(args):
+    rc = call(['docker-compose', 'run', 'churn', 'bash', '-c', 'pytest'])
+    exit(rc)
+
+def package(args):
+    rc = call(['docker-compose', 'run', 'churn', 'bash', '-c',
+               'python setup.py sdist bdist_wheel'])
+    exit(rc)
+
+def publish(args):
+    rc = call(['docker-compose', 'run', 'churn', 'bash', '-c',
+               'twine upload dist/*'])
+    exit(rc)
+
+def main():
+    parser = argparse.ArgumentParser(prog='./dev')
+    subparsers = parser.add_subparsers(help='available actions')
+
+    parser_up = subparsers.add_parser('up',
+                                      help='bring up a development enviroment')
+    parser_up.set_defaults(func=up)
+
+    parser_down = subparsers.add_parser('down',
+                                        help=('bring down the development '
+                                              'environment, and clean up'))
+    parser_down.set_defaults(func=down)
+
+    parser_lint = subparsers.add_parser('lint', help='lint the code')
+    parser_lint.set_defaults(func=lint)
+
+    parser_test = subparsers.add_parser('test', help='test the code')
+    parser_test.set_defaults(func=test)
+
+    parser_package = subparsers.add_parser('package',
+                                           help='create packages for PyPI')
+    parser_package.set_defaults(func=package)
+
+    parser_publish = subparsers.add_parser('publish',
+                                           help='publish to PyPI')
+    parser_publish.set_defaults(func=publish)
+
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == '__main__':
+    main()
