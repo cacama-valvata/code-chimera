@@ -1,0 +1,8 @@
+to count answer links:
+
+rg --files-with-matches 'stackoverflow\.com/a' samples
+
+(or rg -l for short)
+
+
+similar for /q for questions and /[^aq] for neither (aka useless)
