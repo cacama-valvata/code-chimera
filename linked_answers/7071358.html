@@ -1,0 +1,41 @@
+<p>I use a single <code>_version.py</code> file as the "once cannonical place" to store version information:</p>
+
+<ol>
+<li><p>It provides a <code>__version__</code> attribute.</p></li>
+<li><p>It provides the standard metadata version. Therefore it will be detected by <code>pkg_resources</code> or other tools that parse the package metadata (EGG-INFO and/or PKG-INFO, PEP 0345).</p></li>
+<li><p>It doesn't import your package (or anything else) when building your package, which can cause problems in some situations. (See the comments below about what problems this can cause.)</p></li>
+<li><p>There is only one place that the version number is written down, so there is only one place to change it when the version number changes, and there is less chance of inconsistent versions.</p></li>
+</ol>
+
+<p>Here is how it works: the "one canonical place" to store the version number is a .py file, named "_version.py" which is in your Python package, for example in <code>myniftyapp/_version.py</code>. This file is a Python module, but your setup.py doesn't import it! (That would defeat feature 3.) Instead your setup.py knows that the contents of this file is very simple, something like:</p>
+
+<pre><code>__version__ = "3.6.5"
+</code></pre>
+
+<p>And so your setup.py opens the file and parses it, with code like:</p>
+
+<pre><code>import re
+VERSIONFILE="myniftyapp/_version.py"
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+    verstr = mo.group(1)
+else:
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+</code></pre>
+
+<p>Then your setup.py passes that string as the value of the "version" argument to <code>setup()</code>, thus satisfying feature 2.</p>
+
+<p>To satisfy feature 1, you can have your package (at run-time, not at setup time!) import the _version file from <code>myniftyapp/__init__.py</code> like this:</p>
+
+<pre><code>from _version import __version__
+</code></pre>
+
+<p>Here is <a href="https://github.com/tahoe-lafs/zfec/blob/42dededf9d0ddbb165cdfccbd5acdf6e0600cb4b/setup.py#L91" rel="noreferrer">an example of this technique</a> that I've been using for years.</p>
+
+<p>The code in that example is a bit more complicated, but the simplified example that I wrote into this comment should be a complete implementation.</p>
+
+<p>Here is <a href="https://tahoe-lafs.org/trac/zfec/browser/trunk/zfec/zfec/__init__.py?rev=363" rel="noreferrer">example code of importing the version</a>.</p>
+
+<p>If you see anything wrong with this approach, please let me know.</p>

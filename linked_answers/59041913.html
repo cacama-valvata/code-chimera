@@ -1,0 +1,59 @@
+<p>If requiring python 3.6 isn't an issue there is now a way of doing this using <code>asyncio</code>. This method allows you to capture stdout and stderr separately but still have both stream to the tty without using threads. Here's a rough outline:</p>
+<pre><code>class RunOutput:
+    def __init__(self, returncode, stdout, stderr):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+async def _read_stream(stream, callback):
+    while True:
+        line = await stream.readline()
+        if line:
+            callback(line)
+        else:
+            break
+
+
+async def _stream_subprocess(cmd, stdin=None, quiet=False, echo=False) -&gt; RunOutput:
+    if isWindows():
+        platform_settings = {&quot;env&quot;: os.environ}
+    else:
+        platform_settings = {&quot;executable&quot;: &quot;/bin/bash&quot;}
+    if echo:
+        print(cmd)
+    p = await asyncio.create_subprocess_shell(
+        cmd,
+        stdin=stdin,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        **platform_settings
+    )
+    out = []
+    err = []
+
+    def tee(line, sink, pipe, label=&quot;&quot;):
+        line = line.decode(&quot;utf-8&quot;).rstrip()
+        sink.append(line)
+        if not quiet:
+            print(label, line, file=pipe)
+
+    await asyncio.wait(
+        [
+            _read_stream(p.stdout, lambda l: tee(l, out, sys.stdout)),
+            _read_stream(p.stderr, lambda l: tee(l, err, sys.stderr, label=&quot;ERR:&quot;)),
+        ]
+    )
+
+    return RunOutput(await p.wait(), out, err)
+
+
+def run(cmd, stdin=None, quiet=False, echo=False) -&gt; RunOutput:
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        _stream_subprocess(cmd, stdin=stdin, quiet=quiet, echo=echo)
+    )
+
+    return result
+</code></pre>
+<p>The code above was based on this blog post: <a href="https://kevinmccarthy.org/2016/07/25/streaming-subprocess-stdin-and-stdout-with-asyncio-in-python/" rel="noreferrer">https://kevinmccarthy.org/2016/07/25/streaming-subprocess-stdin-and-stdout-with-asyncio-in-python/</a></p>

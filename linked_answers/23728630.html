@@ -1,0 +1,18 @@
+<p>This Stack Overflow quesion is the current top Google result for "random string Python". The current top answer is:</p>
+
+<pre><code>''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
+</code></pre>
+
+<p>This is an excellent method, but the <a href="http://en.wikipedia.org/wiki/Pseudorandom_number_generator" rel="noreferrer">PRNG</a> in random is not cryptographically secure. I assume many people researching this question will want to generate random strings for encryption or passwords. You can do this securely by making a small change in the above code:</p>
+
+<pre><code>''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(N))
+</code></pre>
+
+<p>Using <code>random.SystemRandom()</code> instead of just random uses /dev/urandom on *nix machines and <code>CryptGenRandom()</code> in Windows.  These are cryptographically secure PRNGs. Using <code>random.choice</code> instead of <code>random.SystemRandom().choice</code> in an application that requires a secure PRNG could be potentially devastating, and given the popularity of this question, I bet that mistake has been made many times already.</p>
+
+<p>If you're using python3.6 or above, you can use the new <a href="https://docs.python.org/3/library/secrets.html" rel="noreferrer">secrets</a> module as mentioned in <a href="https://stackoverflow.com/a/41464693/7851470">MSeifert's answer</a>:</p>
+
+<pre><code>''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(N))
+</code></pre>
+
+<p>The module docs also discuss convenient ways to <a href="https://docs.python.org/3/library/secrets.html#generating-tokens" rel="noreferrer">generate secure tokens</a> and <a href="https://docs.python.org/3/library/secrets.html#recipes-and-best-practices" rel="noreferrer">best practices</a>.</p>

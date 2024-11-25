@@ -1,0 +1,14 @@
+<p>The most terse approach I've found without relying on packages like six, is:</p>
+
+<pre><code>try:
+  basestring
+except NameError:
+  basestring = str
+</code></pre>
+
+<p>then, assuming you've been checking for strings in Python 2 in the most generic manner,</p>
+
+<pre><code>isinstance(s, basestring)
+</code></pre>
+
+<p>will now also work for Python 3+.</p>

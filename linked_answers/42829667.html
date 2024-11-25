@@ -1,0 +1,50 @@
+<p>I needed something to replace regular expressions in docx.
+I took scannys answer.
+To handle style I've used answer from:
+ <a href="https://stackoverflow.com/questions/34779724/python-docx-replace-string-in-paragraph-while-keeping-style">Python docx Replace string in paragraph while keeping style
+</a>
+added recursive call to handle nested tables.
+and came up with something like this:</p>
+
+<pre><code>import re
+from docx import Document
+
+def docx_replace_regex(doc_obj, regex , replace):
+
+    for p in doc_obj.paragraphs:
+        if regex.search(p.text):
+            inline = p.runs
+            # Loop added to work with runs (strings with same style)
+            for i in range(len(inline)):
+                if regex.search(inline[i].text):
+                    text = regex.sub(replace, inline[i].text)
+                    inline[i].text = text
+
+    for table in doc_obj.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                docx_replace_regex(cell, regex , replace)
+
+
+
+regex1 = re.compile(r"your regex")
+replace1 = r"your replace string"
+filename = "test.docx"
+doc = Document(filename)
+docx_replace_regex(doc, regex1 , replace1)
+doc.save('result1.docx')
+</code></pre>
+
+<p>To iterate over dictionary:</p>
+
+<pre><code>for word, replacement in dictionary.items():
+    word_re=re.compile(word)
+    docx_replace_regex(doc, word_re , replacement)
+</code></pre>
+
+<p>Note that this solution will replace regex only if whole regex has same style in document.</p>
+
+<p>Also if text is edited after saving same style text might be in separate runs.
+For example if you open document that has "testabcd" string and you change it to "test1abcd" and save, even dough its the same style there are 3 separate runs "test", "1", and "abcd", in this case replacement of test1 won't work. </p>
+
+<p>This is for tracking changes in the document. To marge it to one run, in Word you need to go to "Options", "Trust Center" and in "Privacy Options" unthick "Store random numbers to improve combine accuracy" and save the document.</p>

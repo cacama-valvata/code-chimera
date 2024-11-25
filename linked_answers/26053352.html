@@ -1,0 +1,13 @@
+<p>Use <a href="https://code.google.com/archive/p/socksipy-branch/" rel="noreferrer">SocksiPy</a>:</p>
+
+<pre><code>import smtplib
+import socks
+
+#'proxy_port' should be an integer
+#'PROXY_TYPE_SOCKS4' can be replaced to HTTP or PROXY_TYPE_SOCKS5
+socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS4, proxy_host, proxy_port)
+socks.wrapmodule(smtplib)
+
+smtp = smtplib.SMTP()
+...
+</code></pre>

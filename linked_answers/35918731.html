@@ -1,0 +1,25 @@
+<p>Just call <code>drop()</code> against the table object.
+From <a href="http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Table.drop" rel="noreferrer">the docs</a>: </p>
+
+<blockquote>
+  <p>Issue a DROP statement for this Table, using the given Connectable for connectivity.</p>
+</blockquote>
+
+<p>In your case it should be:</p>
+
+<pre><code>User.__table__.drop()
+</code></pre>
+
+<hr>
+
+<p>If you get an exception like:</p>
+
+<blockquote>
+<pre><code>sqlalchemy.exc.UnboundExecutionError: Table object 'my_users' is not bound to an Engine or Connection. Execution can not proceed without a database to execute against
+</code></pre>
+</blockquote>
+
+<p>You need to pass the engine:</p>
+
+<pre><code>User.__table__.drop(engine)
+</code></pre>

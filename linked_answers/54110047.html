@@ -1,0 +1,12 @@
+<p>Let's make it lazy!</p>
+
+<pre><code>from itertools import islice, tee
+
+def window(iterable, size): 
+    iterators = tee(iterable, size) 
+    iterators = [islice(iterator, i, None) for i, iterator in enumerate(iterators)]  
+    yield from zip(*iterators)
+
+list(window(range(5), 3))
+# [(0, 1, 2), (1, 2, 3), (2, 3, 4)]
+</code></pre>

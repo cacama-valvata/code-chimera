@@ -1,0 +1,20 @@
+<p>You seem to have already realised this; the remote server is apparently checking the user agent header and rejecting requests from Python's urllib. But <code>urllib.request.urlretrieve()</code> doesn't allow you to change the HTTP headers, however, you can use <a href="https://docs.python.org/3.5/library/urllib.request.html#urllib.request.URLopener.retrieve" rel="noreferrer"><code>urllib.request.URLopener.retrieve()</code></a>:</p>
+
+<pre><code>import urllib.request
+
+opener = urllib.request.URLopener()
+opener.addheader('User-Agent', 'whatever')
+filename, headers = opener.retrieve(url, 'Test.pdf')
+</code></pre>
+
+<p>N.B. You are using Python 3 and these functions are now considered part of the <a href="https://docs.python.org/3.5/library/urllib.request.html#legacy-interface" rel="noreferrer">"Legacy interface"</a>, and <code>URLopener</code> has been deprecated. For that reason you should not use them in new code.</p>
+
+<p>The above aside, you are going to a lot of trouble to simply access a URL. Your code imports <a href="http://docs.python-requests.org/en/latest/" rel="noreferrer"><code>requests</code></a>, but you don't use it - you should though because it is much easier than <code>urllib</code>. This works for me:</p>
+
+<pre><code>import requests
+
+url = 'http://papers.xtremepapers.com/CIE/Cambridge%20IGCSE/Mathematics%20(0580)/0580_s03_qp_1.pdf'
+r = requests.get(url)
+with open('0580_s03_qp_1.pdf', 'wb') as outfile:
+    outfile.write(r.content)
+</code></pre>

@@ -1,0 +1,16 @@
+<p>One use is  using the name to reopen the file:</p>
+
+<pre><code>open(f.name).read()
+</code></pre>
+
+<p>I use the name attribute when changing a file content using a <a href="https://docs.python.org/2/library/tempfile.html#tempfile.NamedTemporaryFile" rel="noreferrer">NamedTemporaryFile</a> to write the updated content to then replace the original file with <a href="https://docs.python.org/2/library/shutil.html" rel="noreferrer"><code>shutil.move</code></a>:</p>
+
+<pre><code>with open("foo.txt") as f, NamedTemporaryFile("w", dir=".", delete=False) as temp:
+    for line in f:
+        if stuff:
+            temp.write("stuff")
+
+shutil.move(temp.name, "foo.txt")
+</code></pre>
+
+<p>Also as commented you can use the <code>f.closed</code> to see if the file is <em>really</em> closed.</p>

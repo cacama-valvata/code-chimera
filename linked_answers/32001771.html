@@ -1,0 +1,68 @@
+<p>It can be as simple as logging to a <code>StringIO</code> object:</p>
+
+<pre><code>import logging
+try:
+    from cStringIO import StringIO      # Python 2
+except ImportError:
+    from io import StringIO
+
+log_stream = StringIO()    
+logging.basicConfig(stream=log_stream, level=logging.INFO)
+
+logging.info('hello world')
+logging.warning('be careful!')
+logging.debug("you won't see this")
+logging.error('you will see this')
+logging.critical('critical is logged too!')
+
+print(log_stream.getvalue())
+</code></pre>
+
+<p><strong>Output</strong></p>
+
+<pre>
+INFO:root:hello world
+WARNING:root:be careful!
+ERROR:root:you will see this
+CRITICAL:root:critical is logged too!
+
+</pre>
+
+<hr>
+
+<p>If you want to log only those messages at levels WARN, INFO and ERROR you can do it with a filter. <code>LevelFilter</code> below checks each log record's level no, allowing only those records of the desired level(s):</p>
+
+<pre><code>import logging
+try:
+    from cStringIO import StringIO      # Python 2
+except ImportError:
+    from io import StringIO
+
+class LevelFilter(logging.Filter):
+    def __init__(self, levels):
+        self.levels = levels
+
+    def filter(self, record):
+        return record.levelno in self.levels
+
+log_stream = StringIO()    
+logging.basicConfig(stream=log_stream, level=logging.NOTSET)
+logging.getLogger().addFilter(LevelFilter((logging.INFO, logging.WARNING, logging.ERROR)))
+
+logging.info('hello world')
+logging.warning('be careful!')
+logging.debug("you won't see this")
+logging.error('you will see this')
+logging.critical('critical is no longer logged!')
+
+print(log_stream.getvalue())
+</code></pre>
+
+<p><strong>Output</strong></p>
+
+<pre>
+INFO:root:hello world
+WARNING:root:be careful!
+ERROR:root:you will see this
+
+</pre>

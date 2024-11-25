@@ -1,0 +1,12 @@
+<p>In 2.x, <a href="http://docs.python.org/library/functions.html#zip" rel="noreferrer"><code>zip</code></a> is its own inverse! Provided you <a href="https://stackoverflow.com/questions/36901">use the special * operator</a>.</p>
+<pre><code>&gt;&gt;&gt; zip(*[('a', 1), ('b', 2), ('c', 3), ('d', 4)])
+[('a', 'b', 'c', 'd'), (1, 2, 3, 4)]
+</code></pre>
+<p>This is equivalent to calling <code>zip</code> with each element of the list as a separate argument:</p>
+<pre><code>zip(('a', 1), ('b', 2), ('c', 3), ('d', 4))
+</code></pre>
+<p>except the arguments are passed to <code>zip</code> directly (after being converted to a tuple), so there's no need to worry about the number of arguments getting too big.</p>
+<p>In 3.x, <code>zip</code> <a href="https://stackoverflow.com/questions/27431390">returns a lazy iterator</a>, but this is trivially converted:</p>
+<pre><code>&gt;&gt;&gt; list(zip(*[('a', 1), ('b', 2), ('c', 3), ('d', 4)]))
+[('a', 'b', 'c', 'd'), (1, 2, 3, 4)]
+</code></pre>

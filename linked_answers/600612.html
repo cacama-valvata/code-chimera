@@ -1,0 +1,25 @@
+<p>For Python ≥ 3.5, use <a href="https://docs.python.org/library/pathlib.html#pathlib.Path.mkdir" rel="noreferrer"><code>pathlib.Path.mkdir</code></a>:</p>
+<pre><code>import pathlib
+pathlib.Path(&quot;/tmp/path/to/desired/directory&quot;).mkdir(parents=True, exist_ok=True)
+</code></pre>
+<p>The <code>exist_ok</code> parameter was added in Python 3.5.</p>
+<hr />
+<p>For Python ≥ 3.2, <a href="https://docs.python.org/library/os.html#os.makedirs" rel="noreferrer"><code>os.makedirs</code></a> has an <a href="https://docs.python.org/3/library/os.html?highlight=exist_ok#os.makedirs" rel="noreferrer">optional third argument <code>exist_ok</code></a> that, when <code>True</code>, enables the <code>mkdir -p</code> functionality—<em>unless</em> <code>mode</code> is provided and the existing directory has different permissions than the intended ones; in that case, <code>OSError</code> is raised as previously:</p>
+<pre><code>import os
+os.makedirs(&quot;/tmp/path/to/desired/directory&quot;, exist_ok=True)
+</code></pre>
+<hr />
+<p>For even older versions of Python, you can use <code>os.makedirs</code> and ignore the error:</p>
+<pre><code>import errno    
+import os
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python ≥ 2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        # possibly handle other errno cases here, otherwise finally:
+        else:
+            raise
+</code></pre>

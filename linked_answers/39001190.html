@@ -1,0 +1,17 @@
+<p>Using <code>Q(pk__in=[])</code> seems to be a good way to represent this idiom.</p>
+<p>As indicated by @fwip and comments below: Django's ORM nicely recognises this case, knowing this always evaluates to <code>FALSE</code>.  For example:</p>
+<pre class="lang-py prettyprint-override"><code>FooBar.objects.filter(Q(pk__in=[]))
+</code></pre>
+<p>correctly returns an empty <code>QuerySet</code> without involving any round trip to the database.  While:</p>
+<pre class="lang-py prettyprint-override"><code>FooBar.objects.filter(
+  (Q(pk__in=[]) &amp; Q(foo=&quot;bar&quot;)) |
+  Q(hello=&quot;world&quot;)
+)
+</code></pre>
+<p>is optimised down to:</p>
+<pre class="lang-py prettyprint-override"><code>FooBar.objects.filter(
+  Q(hello=&quot;world&quot;)
+)
+</code></pre>
+<p>i.e. it recognises that <code>Q(pk__in=[])</code> is always <code>FALSE</code>, hence the <code>AND</code> condition can never be <code>TRUE</code>, so is removed.</p>
+<p>To see what queries are actually sent to the database, see: <a href="https://stackoverflow.com/q/1074212/1358308">How can I see the raw SQL queries Django is running?</a></p>

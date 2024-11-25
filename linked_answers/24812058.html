@@ -1,0 +1,23 @@
+<p>For 3.1+, one of the following:</p>
+
+<pre><code>isinstance(something, io.TextIOBase)
+isinstance(something, io.BufferedIOBase)
+isinstance(something, io.RawIOBase)
+isinstance(something, io.IOBase)
+</code></pre>
+
+<p>For 2.x, "file-like object" is too vague a thing to check for, but the documentation for whatever function(s) you're dealing with will hopefully tell you what they actually need; if not, read the code.</p>
+
+<hr>
+
+<p>As other answers point out, the first thing to ask is what exactly you're checking for. Usually, EAFP is sufficient, and more idiomatic.</p>
+
+<p><a href="https://docs.python.org/3/glossary.html#term-file-object">The glossary</a> says "file-like object" is a synonym for "file object", which ultimately means it's an instance of one of the three <a href="https://docs.python.org/3/library/abc.html">abstract base classes</a> defined in <a href="https://docs.python.org/3/library/io.html#class-hierarchy">the <code>io</code> module</a>, which are themselves all subclasses of <code>IOBase</code>. So, the way to check is exactly as shown above.</p>
+
+<p>(However, checking <code>IOBase</code> isn't very useful. Can you imagine a case where you need to distinguish an actual file-like <code>read(size)</code> from some one-argument function named <code>read</code> that isn't file-like, without also needing to distinguish between text files and raw binary files? So, really, you almost always want to check, e.g., "is a text file object", not "is a file-like object".)</p>
+
+<hr>
+
+<p>For 2.x, while the <code>io</code> module has existed since 2.6+, built-in file objects are not instances of <code>io</code> classes, neither are any of the file-like objects in the stdlib, and neither are most third-party file-like objects you're likely to encounter. There was no official definition of what "file-like object" means; it's just "something like a builtin <a href="https://docs.python.org/2.7/library/stdtypes.html#bltin-file-objects">file object</a>", and different functions mean different things by "like". Such functions should document what they mean; if they don't, you have to look at the code.</p>
+
+<p>However, the most common meanings are "has <code>read(size)</code>", "has <code>read()</code>", or "is an iterable of strings", but some old libraries may expect <code>readline</code> instead of one of those, some libraries like to <code>close()</code> files you give them, some will expect that if <code>fileno</code> is present then other functionality is available, etc. And similarly for <code>write(buf)</code> (although there are a lot fewer options in that direction).</p>

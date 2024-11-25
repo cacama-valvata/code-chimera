@@ -1,0 +1,19 @@
+<p>This seems to result from tf.map_fn being unable to determine the TypeSpec of the input tensor when the input is a keras sympolic Input.</p>
+<p>Several times now I've run into problems with tensorflow ops and Keras symbolic Input tensors. Wrapping the offending code in a custom layer seems to generally fix it.</p>
+<p>For example, replacing the code above with this will execute successfully:</p>
+<pre><code>import tensorflow as tf
+
+from tensorflow.keras.layers import Input, Layer
+from tensorflow.keras.models import Model
+
+x = Input(shape=(10,))
+
+class MapLayer(Layer):
+
+    def call(self, input):
+        return tf.map_fn(lambda x : x * 2, input, fn_output_signature=tf.float32)
+
+y = MapLayer()(x)
+
+model = Model(inputs=x, outputs=y)
+</code></pre>

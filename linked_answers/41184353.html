@@ -1,0 +1,45 @@
+<p>Here is a monkey patch (based on Sphinx 1.5.1) that disables <code>ivar</code> cross-references. I'm not sure what the best solution is, so consider the patch an experimental suggestion. To try it out, add the code below to <code>conf.py</code>.</p>
+
+<pre><code>from docutils import nodes
+from sphinx.util.docfields import TypedField
+from sphinx import addnodes
+
+def patched_make_field(self, types, domain, items):
+    # type: (List, unicode, Tuple) -&gt; nodes.field
+    def handle_item(fieldarg, content):
+        par = nodes.paragraph()
+        par += addnodes.literal_strong('', fieldarg)  # Patch: this line added
+        #par.extend(self.make_xrefs(self.rolename, domain, fieldarg,
+        #                           addnodes.literal_strong))
+        if fieldarg in types:
+            par += nodes.Text(' (')
+            # NOTE: using .pop() here to prevent a single type node to be
+            # inserted twice into the doctree, which leads to
+            # inconsistencies later when references are resolved
+            fieldtype = types.pop(fieldarg)
+            if len(fieldtype) == 1 and isinstance(fieldtype[0], nodes.Text):
+                typename = u''.join(n.astext() for n in fieldtype)
+                par.extend(self.make_xrefs(self.typerolename, domain, typename,
+                                           addnodes.literal_emphasis))
+            else:
+                par += fieldtype
+            par += nodes.Text(')')
+        par += nodes.Text(' -- ')
+        par += content
+        return par
+
+    fieldname = nodes.field_name('', self.label)
+    if len(items) == 1 and self.can_collapse:
+        fieldarg, content = items[0]
+        bodynode = handle_item(fieldarg, content)
+    else:
+        bodynode = self.list_type()
+        for fieldarg, content in items:
+            bodynode += nodes.list_item('', handle_item(fieldarg, content))
+    fieldbody = nodes.field_body('', bodynode)
+    return nodes.field('', fieldname, fieldbody)
+
+TypedField.make_field = patched_make_field
+</code></pre>
+
+<p>The original <code>TypedField.make_field</code> method is here: <a href="https://github.com/sphinx-doc/sphinx/blob/master/sphinx/util/docfields.py" rel="nofollow noreferrer">https://github.com/sphinx-doc/sphinx/blob/master/sphinx/util/docfields.py</a>.</p>

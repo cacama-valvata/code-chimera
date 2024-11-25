@@ -1,0 +1,43 @@
+<p>There is no standard module for this, but I have written my own functions to achieve that.</p>
+<pre class="lang-py prettyprint-override"><code>BASE62 = &quot;0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;
+
+def encode(num, alphabet):
+    &quot;&quot;&quot;Encode a positive number into Base X and return the string.
+
+    Arguments:
+    - `num`: The number to encode
+    - `alphabet`: The alphabet to use for encoding
+    &quot;&quot;&quot;
+    if num == 0:
+        return alphabet[0]
+    arr = []
+    arr_append = arr.append  # Extract bound-method for faster access.
+    _divmod = divmod  # Access to locals is faster.
+    base = len(alphabet)
+    while num:
+        num, rem = _divmod(num, base)
+        arr_append(alphabet[rem])
+    arr.reverse()
+    return ''.join(arr)
+
+def decode(string, alphabet=BASE62):
+    &quot;&quot;&quot;Decode a Base X encoded string into the number
+
+    Arguments:
+    - `string`: The encoded string
+    - `alphabet`: The alphabet to use for decoding
+    &quot;&quot;&quot;
+    base = len(alphabet)
+    strlen = len(string)
+    num = 0
+
+    idx = 0
+    for char in string:
+        power = (strlen - (idx + 1))
+        num += alphabet.index(char) * (base ** power)
+        idx += 1
+
+    return num
+</code></pre>
+<p>Notice the fact that you can give it any alphabet to use for encoding and decoding. If you leave the <code>alphabet</code> argument out, you are going to get the 62 character alphabet defined on the first line of code, and hence encoding/decoding to/from 62 base.</p>
+<p>PS - For URL shorteners, I have found that it's better to leave out a few confusing characters like 0Ol1oI etc. Thus I use this alphabet for my URL shortening needs - <code>&quot;23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ&quot;</code></p>

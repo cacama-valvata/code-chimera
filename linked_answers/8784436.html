@@ -1,0 +1,25 @@
+<p>Use <a href="http://docs.python.org/library/re.html" rel="noreferrer">regular expressions</a>:</p>
+
+<pre><code>&gt;&gt;&gt; import re
+&gt;&gt;&gt; s = '&lt;@ """@$ FSDF &gt;something something &lt;more noise&gt;'
+&gt;&gt;&gt; re.sub('&lt;[^&gt;]+&gt;', '', s)
+'something something '
+</code></pre>
+
+<p>[Update]</p>
+
+<p>If you tried a pattern like <code>&lt;.+&gt;</code>, where the dot means any character and the plus sign means one or more, you know it does not work.</p>
+
+<pre><code>&gt;&gt;&gt; re.sub(r'&lt;.+&gt;', s, '')
+''
+</code></pre>
+
+<p>Why!?! It happens because regular expressions are "greedy" by default. The expression will match anything until the end of the string, including the <code>&gt;</code> - and this is not what we want. We want to match <code>&lt;</code> and stop on the next <code>&gt;</code>, so we use the <code>[^x]</code> pattern which means "any character but x" (x being <code>&gt;</code>). </p>
+
+<p>The <code>?</code> operator turns the match "non-greedy", so this has the same effect:</p>
+
+<pre><code>&gt;&gt;&gt; re.sub(r'&lt;.+?&gt;', '', s)
+'something something '
+</code></pre>
+
+<p>The previous is more explicit, this one is less typing; be aware that <code>x?</code> means zero or one occurrence of x.</p>

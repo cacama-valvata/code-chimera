@@ -1,0 +1,19 @@
+- only answers without code blocks (obtained by running: rg -g '*.md' --files-without-match '(```|\t|    )' linked_answers/):
+  - `linked_answers/40798379.md`
+    - methods on a file object
+  - `linked_answers/40674915.md`
+    - chrome paths on different windows versions??
+  - `linked_answers/14159430.md`
+    - something python packaging related
+  - `linked_answers/25548626.md`
+    - SQL server DateTime storage format (??)
+  - `linked_answers/2695466.md`
+    - gzip decompression using `zlib` module (quotes documentation)
+  - `linked_answers/14145564.md`
+    - graph searching (shortest path maybe?)
+
+- stats on links
+  - 128 distinct answer ids in links
+    - one seems to be dead? specifically 42033122
+      - linked to by `_giussepi_INCREMENTAL-LC-KSVD_blob_112eb2391a91acf20a880602862556f6b8d3ddf4_setup.py` (line 15)
+      - setuptools-related question for dealing with requirements.txt

@@ -1,0 +1,23 @@
+<pre><code>def str2bool(v):
+  return v.lower() in ("yes", "true", "t", "1")
+</code></pre>
+
+<p>Then call it like so:</p>
+
+<pre class="lang-py prettyprint-override"><code>&gt;&gt;&gt; str2bool("yes")
+True
+&gt;&gt;&gt; str2bool("no")
+False
+&gt;&gt;&gt; str2bool("stuff")
+False
+&gt;&gt;&gt; str2bool("1")
+True
+&gt;&gt;&gt; str2bool("0")
+False
+</code></pre>
+
+<hr>
+
+<p><strong>Handling true and false explicitly:</strong></p>
+
+<p>You could also make your function explicitly check against a True list of words and a False list of words.  Then if it is in neither list, you could throw an exception. </p>

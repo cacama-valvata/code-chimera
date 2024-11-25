@@ -1,0 +1,58 @@
+<p>Combining all of the existing answers with a bunch of usage experience, I think that I have come up with a list of all the things that need to be done to ensure completely seamless usage of the new level. The steps below assume that you are adding a new level <code>TRACE</code> with value <code>logging.DEBUG - 5 == 5</code>:</p>
+<ol>
+<li><code>logging.addLevelName(logging.DEBUG - 5, 'TRACE')</code> needs to be invoked to get the new level registered internally so that it can be referenced by name.</li>
+<li>The new level needs to be added as an attribute to <code>logging</code> itself for consistency: <code>logging.TRACE = logging.DEBUG - 5</code>.</li>
+<li>A method called <code>trace</code> needs to be added to the <code>logging</code> module. It should behave just like <code>debug</code>, <code>info</code>, etc.</li>
+<li>A method called <code>trace</code> needs to be added to the currently configured logger class. Since this is not 100% guaranteed to be <code>logging.Logger</code>, use <code>logging.getLoggerClass()</code> instead.</li>
+</ol>
+<p>All the steps are illustrated in the method below:</p>
+<pre><code>def addLoggingLevel(levelName, levelNum, methodName=None):
+    &quot;&quot;&quot;
+    Comprehensively adds a new logging level to the `logging` module and the
+    currently configured logging class.
+
+    `levelName` becomes an attribute of the `logging` module with the value
+    `levelNum`. `methodName` becomes a convenience method for both `logging`
+    itself and the class returned by `logging.getLoggerClass()` (usually just
+    `logging.Logger`). If `methodName` is not specified, `levelName.lower()` is
+    used.
+
+    To avoid accidental clobberings of existing attributes, this method will
+    raise an `AttributeError` if the level name is already an attribute of the
+    `logging` module or if the method name is already present 
+
+    Example
+    -------
+    &gt;&gt;&gt; addLoggingLevel('TRACE', logging.DEBUG - 5)
+    &gt;&gt;&gt; logging.getLogger(__name__).setLevel(&quot;TRACE&quot;)
+    &gt;&gt;&gt; logging.getLogger(__name__).trace('that worked')
+    &gt;&gt;&gt; logging.trace('so did this')
+    &gt;&gt;&gt; logging.TRACE
+    5
+
+    &quot;&quot;&quot;
+    if not methodName:
+        methodName = levelName.lower()
+
+    if hasattr(logging, levelName):
+       raise AttributeError('{} already defined in logging module'.format(levelName))
+    if hasattr(logging, methodName):
+       raise AttributeError('{} already defined in logging module'.format(methodName))
+    if hasattr(logging.getLoggerClass(), methodName):
+       raise AttributeError('{} already defined in logger class'.format(methodName))
+
+    # This method was inspired by the answers to Stack Overflow post
+    # http://stackoverflow.com/q/2183233/2988730, especially
+    # http://stackoverflow.com/a/13638084/2988730
+    def logForLevel(self, message, *args, **kwargs):
+        if self.isEnabledFor(levelNum):
+            self._log(levelNum, message, args, **kwargs)
+    def logToRoot(message, *args, **kwargs):
+        logging.log(levelNum, message, *args, **kwargs)
+
+    logging.addLevelName(levelNum, levelName)
+    setattr(logging, levelName, levelNum)
+    setattr(logging.getLoggerClass(), methodName, logForLevel)
+    setattr(logging, methodName, logToRoot)
+</code></pre>
+<p>You can find an even more detailed implementation in the utility library I maintain, <a href="https://haggis.readthedocs.io/en/stable/" rel="noreferrer">haggis</a>. The function <a href="https://haggis.readthedocs.io/en/stable/api.html#haggis.logs.add_logging_level" rel="noreferrer"><code>haggis.logs.add_logging_level</code></a> is a more production-ready implementation of this answer.</p>

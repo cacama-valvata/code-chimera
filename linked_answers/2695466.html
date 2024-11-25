@@ -1,0 +1,25 @@
+<p>Decompress your byte stream using the built-in gzip module.</p>
+
+<p>If you have any problems, do show the exact minimal code that you used, the exact error message and traceback, together with the result of <code>print repr(your_byte_stream[:100])</code></p>
+
+<p><strong>Further information</strong></p>
+
+<p><strong>1.</strong> For an explanation of the gzip/zlib/deflate confusion, read the "Other uses" section of <a href="http://en.wikipedia.org/wiki/Gzip" rel="noreferrer">this Wikipedia article</a>.</p>
+
+<p><strong>2.</strong> It can be easier to use the zlib module than the gzip module if you have a string rather than a file. Unfortunately the <a href="http://docs.python.org/library/zlib.html#zlib.decompress" rel="noreferrer">Python docs</a> are incomplete/wrong:</p>
+
+<blockquote>
+  <p>zlib.decompress(string[, wbits[, bufsize]])</p>
+  
+  <p>...The absolute value of wbits is the base two logarithm of the size of the  history buffer (the “window size”) used when compressing data. Its absolute value should be between 8 and 15 for the most recent versions of the zlib library, larger values resulting in better compression at the expense of greater memory usage. The default value is 15. When wbits is negative, the standard gzip header is suppressed; this is an undocumented feature of the zlib library, used for compatibility with unzip‘s compression file format.</p>
+</blockquote>
+
+<p>Firstly, 8 &lt;= log2_window_size &lt;= 15, with the meaning given above. Then what should be a separate arg is kludged on top:</p>
+
+<p>arg == log2_window_size means assume string is in zlib format (RFC 1950; what the HTTP 1.1 RFC 2616 confusingly calls "deflate").</p>
+
+<p>arg == -log2_window_size means assume string is in deflate format (RFC 1951; what people who didn't read the HTTP 1.1 RFC carefully actually implemented)</p>
+
+<p>arg == 16 + log_2_window_size means assume string is in gzip format (RFC 1952). So you can use 31.</p>
+
+<p>The above information is documented in the <a href="http://www.zlib.net/manual.html" rel="noreferrer">zlib C library manual</a> ... Ctrl-F search for <code>windowBits</code>.</p>

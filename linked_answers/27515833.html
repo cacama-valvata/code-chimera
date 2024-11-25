@@ -1,0 +1,58 @@
+<p>As of 2024, this is what works:</p>
+<p>Go to <a href="https://myaccount.google.com/security" rel="noreferrer">https://myaccount.google.com/security</a> and make sure 2-step verification in enabled on your account. So for this you can setup an app on your phone like Google Authenticator, authy etc..</p>
+<p>Once you have setup &quot;2-Step Verification&quot;, from security go to &quot;2-Step verification&quot; again and scroll down to &quot;App Passwords&quot;:</p>
+<p><a href="https://i.sstatic.net/zTlbJ.png" rel="noreferrer"><img src="https://i.sstatic.net/zTlbJ.png" alt="enter image description here" /></a></p>
+<p>Now give your app a name and you will be given a password for your device.</p>
+<p>Finally save your password somewhere safe and plugin your email and password into the following script:</p>
+<pre class="lang-py prettyprint-override"><code>import smtplib
+
+YOUR_GOOGLE_EMAIL = '&lt;you@gmail.com&gt;'  # The email you setup to send the email using app password
+YOUR_GOOGLE_EMAIL_APP_PASSWORD = '&lt;your-app-password&gt;'  # The app password you generated
+
+smtpserver = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+smtpserver.ehlo()
+smtpserver.login(YOUR_GOOGLE_EMAIL, YOUR_GOOGLE_EMAIL_APP_PASSWORD)
+
+# Test send mail
+sent_from = YOUR_GOOGLE_EMAIL
+sent_to = sent_from  #  Send it to self (as test)
+email_text = 'This is a test'
+smtpserver.sendmail(sent_from, sent_to, email_text)
+
+# Close the connection
+smtpserver.close()
+
+</code></pre>
+<p>For more details see <a href="https://support.google.com/accounts/answer/185833" rel="noreferrer">Google Auth Passwords</a>.</p>
+<p><strong>OLD Answer</strong>: (This no longer works)
+I ran into a similar problem and stumbled on this question. I got an SMTP Authentication Error but my user name / pass was correct. Here is what fixed it. I read this:</p>
+<p><a href="https://support.google.com/accounts/answer/6010255" rel="noreferrer">https://support.google.com/accounts/answer/6010255</a></p>
+<p>In a nutshell, google is not allowing you to log in via smtplib because it has flagged this sort of login as &quot;less secure&quot;, so what you have to do is go to this link while you're logged in to your google account, and allow the access:</p>
+<p><a href="https://www.google.com/settings/security/lesssecureapps" rel="noreferrer">https://www.google.com/settings/security/lesssecureapps</a></p>
+<p>Once that is set (see my screenshot below), it should work.</p>
+<p><img src="https://i.sstatic.net/NwOeS.png" alt="enter image description here" /></p>
+<p>Login now works:</p>
+<pre><code>smtpserver = smtplib.SMTP(&quot;smtp.gmail.com&quot;, 587)
+smtpserver.ehlo()
+smtpserver.starttls()
+smtpserver.ehlo()
+smtpserver.login('me@gmail.com', 'me_pass')
+</code></pre>
+<p>Response after change:</p>
+<pre><code>(235, '2.7.0 Accepted')
+</code></pre>
+<p>Response prior:</p>
+<pre><code>smtplib.SMTPAuthenticationError: (535, '5.7.8 Username and Password not accepted. Learn more at\n5.7.8 http://support.google.com/mail/bin/answer.py?answer=14257 g66sm2224117qgf.37 - gsmtp')
+</code></pre>
+<p><strong>Still not working?</strong> If you still get the SMTPAuthenticationError but now the code is 534, its because the location is unknown. Follow this link:</p>
+<p><a href="https://accounts.google.com/DisplayUnlockCaptcha" rel="noreferrer">https://accounts.google.com/DisplayUnlockCaptcha</a></p>
+<p>Click continue and this should give you 10 minutes for registering your new app. So proceed to doing another login attempt now and it should work.</p>
+<p><strong>UPDATE</strong>: This doesn't seem to work right away you may be stuck for a while getting this error in smptlib:</p>
+<pre><code>235 == 'Authentication successful'
+503 == 'Error: already authenticated'
+</code></pre>
+<p>The message says to use the browser to sign in:</p>
+<pre><code>SMTPAuthenticationError: (534, '5.7.9 Please log in with your web browser and then try again. Learn more at\n5.7.9 https://support.google.com/mail/bin/answer.py?answer=78754 qo11sm4014232igb.17 - gsmtp')
+</code></pre>
+<p>After enabling 'lesssecureapps', go for a coffee, come back, and try the 'DisplayUnlockCaptcha' link again. From user experience, it may take up to an hour for the change to kick in. Then try the sign-in process again.</p>
+<p>You many now also need create an app password by following the steps under section &quot;Create &amp; use app passwords&quot; here: support.google.com/accounts/answer/185833</p>

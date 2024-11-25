@@ -1,0 +1,16 @@
+<p>This simple method should do the job:</p>
+
+<pre><code>import re
+
+def convert(name):
+    return re.sub(r'([A-Z]*)([A-Z][a-z]+)', lambda x: (x.group(1) + '_' if x.group(1) else '') + x.group(2) + '_', name).rstrip('_').lower()
+</code></pre>
+
+<ul>
+<li>We look for capital letters that are precedeed by any number of (or zero) capital letters, and followed by any number of lowercase characters.</li>
+<li>An underscore is placed just before the occurence of the last capital letter found in the group, and one can be placed before that capital letter in case it is preceded by other capital letters.</li>
+<li>If there are trailing underscores, remove those.</li>
+<li>Finally, the whole result string is changed to lower case.</li>
+</ul>
+
+<p>(taken from <a href="http://rodic.fr/blog/camelcase-and-snake_case-strings-conversion-with-python/" rel="nofollow">here</a>, see <a href="http://ideone.com/JyVkds" rel="nofollow">working example online</a>)</p>

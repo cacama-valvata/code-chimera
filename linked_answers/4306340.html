@@ -1,0 +1,11 @@
+<p>If you've already got the figure created, you can use <a href="https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.set_size_inches" rel="noreferrer"><code>figure.set_size_inches</code></a> to adjust the figure size:</p>
+<pre><code>fig = matplotlib.pyplot.gcf()
+fig.set_size_inches(18.5, 10.5)
+fig.savefig('test2png.png', dpi=100)
+</code></pre>
+<p>To propagate the size change to an existing GUI window, add <code>forward=True</code>:</p>
+<pre><code>fig.set_size_inches(18.5, 10.5, forward=True)
+</code></pre>
+<p>Additionally as <a href="https://stackoverflow.com/users/599139/erik-shilts">Erik Shilts</a> mentioned in the comments you can also use <a href="https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.set_dpi" rel="noreferrer"><code>figure.set_dpi</code></a> to &quot;[s]et the resolution of the figure in dots-per-inch&quot;</p>
+<pre><code>fig.set_dpi(100)
+</code></pre>

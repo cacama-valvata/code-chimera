@@ -1,0 +1,11 @@
+<p>It's not really hard to roll your own formatting function:</p>
+
+<pre><code>def print_table(table):
+    col_width = [max(len(x) for x in col) for col in zip(*table)]
+    for line in table:
+        print "| " + " | ".join("{:{}}".format(x, col_width[i])
+                                for i, x in enumerate(line)) + " |"
+
+table = [(str(x), str(f(x))) for x in mylist]
+print_table(table)
+</code></pre>

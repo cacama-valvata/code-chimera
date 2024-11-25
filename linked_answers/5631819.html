@@ -1,0 +1,20 @@
+<p><code>Popen.communicate</code> will set the <code>returncode</code> attribute when it's done(*). Here's the relevant documentation section:</p>
+
+<pre><code>Popen.returncode 
+  The child return code, set by poll() and wait() (and indirectly by communicate()). 
+  A None value indicates that the process hasn’t terminated yet.
+
+  A negative value -N indicates that the child was terminated by signal N (Unix only).
+</code></pre>
+
+<p>So you can just do (I didn't test it but it should work):</p>
+
+<pre><code>import subprocess as sp
+child = sp.Popen(openRTSP + opts.split(), stdout=sp.PIPE)
+streamdata = child.communicate()[0]
+rc = child.returncode
+</code></pre>
+
+<hr>
+
+<p>(*) This happens because of the way it's implemented: after setting up threads to read the child's streams, it just calls <code>wait</code>. </p>

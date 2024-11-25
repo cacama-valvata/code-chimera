@@ -1,0 +1,12 @@
+<p>The <a href="https://docs.python.org/library/time.html#time.time" rel="nofollow noreferrer"><code>time.time()</code></a> function returns the number of seconds since the epoch, as a float. Note that “<a href="https://en.wikipedia.org/wiki/Unix_epoch" rel="nofollow noreferrer">the epoch</a>” is defined as the start of January 1st, 1970 in UTC. So the epoch is defined in terms of UTC and establishes a global moment in time. No matter where on Earth you are, “seconds past epoch” (<code>time.time()</code>) returns the same value at the same moment.</p>
+<p>Here is some sample output I ran on my computer, converting it to a string as well.</p>
+<pre><code>&gt;&gt;&gt; import time
+&gt;&gt;&gt; ts = time.time()
+&gt;&gt;&gt; ts
+1355563265.81
+&gt;&gt;&gt; import datetime
+&gt;&gt;&gt; datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+'2012-12-15 01:21:05'
+&gt;&gt;&gt;
+</code></pre>
+<p>The <code>ts</code> variable is the time returned in seconds. I then converted it to a human-readable string using the <code>datetime</code> library.</p>

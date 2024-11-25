@@ -1,0 +1,48 @@
+<p>My answer is mostly inspired by @serge_gubenko's one. However, there were made several improvements so that the code is finally useful in my application.</p>
+
+<pre><code>class HtmlDelegate : public QStyledItemDelegate
+{
+protected:
+    void paint ( QPainter * painter, const QStyleOptionViewItem &amp; option, const QModelIndex &amp; index ) const;
+    QSize sizeHint ( const QStyleOptionViewItem &amp; option, const QModelIndex &amp; index ) const;
+};
+
+void HtmlDelegate::paint(QPainter *painter, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const
+{
+    QStyleOptionViewItemV4 optionV4 = option;
+    initStyleOption(&amp;optionV4, index);
+
+    QStyle *style = optionV4.widget? optionV4.widget-&gt;style() : QApplication::style();
+
+    QTextDocument doc;
+    doc.setHtml(optionV4.text);
+
+    /// Painting item without text
+    optionV4.text = QString();
+    style-&gt;drawControl(QStyle::CE_ItemViewItem, &amp;optionV4, painter);
+
+    QAbstractTextDocumentLayout::PaintContext ctx;
+
+    // Highlighting text if item is selected
+    if (optionV4.state &amp; QStyle::State_Selected)
+        ctx.palette.setColor(QPalette::Text, optionV4.palette.color(QPalette::Active, QPalette::HighlightedText));
+
+    QRect textRect = style-&gt;subElementRect(QStyle::SE_ItemViewItemText, &amp;optionV4);
+    painter-&gt;save();
+    painter-&gt;translate(textRect.topLeft());
+    painter-&gt;setClipRect(textRect.translated(-textRect.topLeft()));
+    doc.documentLayout()-&gt;draw(painter, ctx);
+    painter-&gt;restore();
+}
+
+QSize HtmlDelegate::sizeHint(const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const
+{
+    QStyleOptionViewItemV4 optionV4 = option;
+    initStyleOption(&amp;optionV4, index);
+
+    QTextDocument doc;
+    doc.setHtml(optionV4.text);
+    doc.setTextWidth(optionV4.rect.width());
+    return QSize(doc.idealWidth(), doc.size().height());
+}
+</code></pre>

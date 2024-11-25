@@ -1,0 +1,15 @@
+<h3>Python 3.4+</h3>
+<p>Use <a href="https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.stem" rel="noreferrer"><code>pathlib.Path.stem</code></a></p>
+<pre><code>&gt;&gt;&gt; from pathlib import Path
+&gt;&gt;&gt; Path(&quot;/path/to/file.txt&quot;).stem
+'file'
+&gt;&gt;&gt; Path(&quot;/path/to/file.tar.gz&quot;).stem
+'file.tar'
+</code></pre>
+<h3>Python &lt; 3.4</h3>
+<p>Use <a href="https://docs.python.org/3/library/os.path.html#os.path.splitext" rel="noreferrer"><code>os.path.splitext</code></a> in combination with <a href="https://docs.python.org/3/library/os.path.html#os.path.basename" rel="noreferrer"><code>os.path.basename</code></a>:</p>
+<pre><code>&gt;&gt;&gt; os.path.splitext(os.path.basename(&quot;/path/to/file.txt&quot;))[0]
+'file'
+&gt;&gt;&gt; os.path.splitext(os.path.basename(&quot;/path/to/file.tar.gz&quot;))[0]
+'file.tar'
+</code></pre>

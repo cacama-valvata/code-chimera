@@ -1,0 +1,20 @@
+<p>Addressing the above &quot;too small a task to require a library&quot; issue by a straightforward implementation (using f-strings, so Python 3.6+):</p>
+<pre class="lang-py prettyprint-override"><code>def sizeof_fmt(num, suffix=&quot;B&quot;):
+    for unit in (&quot;&quot;, &quot;Ki&quot;, &quot;Mi&quot;, &quot;Gi&quot;, &quot;Ti&quot;, &quot;Pi&quot;, &quot;Ei&quot;, &quot;Zi&quot;):
+        if abs(num) &lt; 1024.0:
+            return f&quot;{num:3.1f}{unit}{suffix}&quot;
+        num /= 1024.0
+    return f&quot;{num:.1f}Yi{suffix}&quot;
+</code></pre>
+<p>Supports:</p>
+<ul>
+<li>all currently known <a href="https://en.wikipedia.org/wiki/Binary_prefix#Specific_units_of_IEC_60027-2_A.2_and_ISO.2FIEC_80000" rel="noreferrer">binary prefixes</a></li>
+<li>negative and positive numbers</li>
+<li>numbers larger than 1000 Yobibytes</li>
+<li>arbitrary units (maybe you like to count in Gibibits!)</li>
+</ul>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; sizeof_fmt(168963795964)
+'157.4GiB'
+</code></pre>
+<p>by <a href="https://web.archive.org/web/20111010015624/http://blogmag.net/blog/read/38/Print_human_readable_file_size" rel="noreferrer">Fred Cirera</a></p>

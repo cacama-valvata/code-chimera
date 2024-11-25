@@ -1,0 +1,34 @@
+<p>Getting some sort of modification date in a cross-platform way is easy - just call <a href="https://docs.python.org/library/os.path.html#os.path.getmtime" rel="noreferrer"><code>os.path.getmtime(<i>path</i>)</code></a> and you'll get the Unix timestamp of when the file at <code>path</code> was last modified.</p>
+
+<p>Getting file <em>creation</em> dates, on the other hand, is fiddly and platform-dependent, differing even between the three big OSes:</p>
+
+<ul>
+<li>On <strong>Windows</strong>, a file's <code>ctime</code> (documented at <a href="https://msdn.microsoft.com/en-us/library/14h5k7ff.aspx" rel="noreferrer">https://msdn.microsoft.com/en-us/library/14h5k7ff.aspx</a>) stores its creation date. You can access this in Python through <a href="https://docs.python.org/library/os.path.html#os.path.getctime" rel="noreferrer"><code>os.path.getctime()</code></a> or the <a href="https://docs.python.org/3/library/os.html#os.stat_result.st_ctime" rel="noreferrer"><code>.st_ctime</code></a> attribute of the result of a call to <a href="https://docs.python.org/3/library/os.html#os.stat" rel="noreferrer"><code>os.stat()</code></a>. This <em>won't</em> work on Unix, where the <code>ctime</code> <a href="http://www.linux-faqs.info/general/difference-between-mtime-ctime-and-atime" rel="noreferrer">is the last time that the file's attributes <em>or</em> content were changed</a>.</li>
+<li>On <strong>Mac</strong>, as well as some other Unix-based OSes, you can use the <a href="https://docs.python.org/3/library/os.html#os.stat_result.st_birthtime" rel="noreferrer"><code>.st_birthtime</code></a> attribute of the result of a call to <code>os.stat()</code>.</li>
+<li><p>On <strong>Linux</strong>, this is currently impossible, at least without writing a C extension for Python. Although some file systems commonly used with Linux <a href="https://unix.stackexchange.com/questions/7562/what-file-systems-on-linux-store-the-creation-time">do store creation dates</a> (for example, <code>ext4</code> stores them in <code>st_crtime</code>) , the Linux kernel <a href="https://unix.stackexchange.com/questions/91197/how-to-find-creation-date-of-file">offers no way of accessing them</a>; in particular, the structs it returns from <code>stat()</code> calls in C, as of the latest kernel version, <a href="https://github.com/torvalds/linux/blob/v4.8-rc6/include/linux/stat.h" rel="noreferrer">don't contain any creation date fields</a>. You can also see that the identifier <code>st_crtime</code> doesn't currently feature anywhere in the <a href="https://github.com/python/cpython/search?utf8=%E2%9C%93&amp;q=st_crtime" rel="noreferrer">Python source</a>. At least if you're on <code>ext4</code>, the data <em>is</em> attached to the inodes in the file system, but there's no convenient way of accessing it.</p>
+
+<p>The next-best thing on Linux is to access the file's <code>mtime</code>, through either <a href="https://docs.python.org/library/os.path.html#os.path.getmtime" rel="noreferrer"><code>os.path.getmtime()</code></a> or the <a href="https://docs.python.org/3/library/os.html#os.stat_result.st_mtime" rel="noreferrer"><code>.st_mtime</code></a> attribute of an <code>os.stat()</code> result. This will give you the last time the file's content was modified, which may be adequate for some use cases.</p></li>
+</ul>
+
+<p>Putting this all together, cross-platform code should look something like this...</p>
+
+<pre><code>import os
+import platform
+
+def creation_date(path_to_file):
+    """
+    Try to get the date that a file was created, falling back to when it was
+    last modified if that isn't possible.
+    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    """
+    if platform.system() == 'Windows':
+        return os.path.getctime(path_to_file)
+    else:
+        stat = os.stat(path_to_file)
+        try:
+            return stat.st_birthtime
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates here,
+            # so we'll settle for when its content was last modified.
+            return stat.st_mtime
+</code></pre>

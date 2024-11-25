@@ -1,0 +1,31 @@
+<p>@FM's answer has the right general idea, i.e. a recursive solution, but somewhat peculiar coding and at least one bug.  I'd recommend, instead:</p>
+
+<p>Python 2:</p>
+
+<pre><code>import collections
+
+def update(d, u):
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+</code></pre>
+
+<p>Python 3:</p>
+
+<pre><code>import collections.abc
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+</code></pre>
+
+<p>The bug shows up when the "update" has a <code>k</code>, <code>v</code> item where <code>v</code> is a <code>dict</code> and <code>k</code> is not originally a key in the dictionary being updated -- @FM's code "skips" this part of the update (because it performs it on an empty new <code>dict</code> which isn't saved or returned anywhere, just lost when the recursive call returns).</p>
+
+<p>My other changes are minor: there is no reason for the <code>if</code>/<code>else</code> construct when <code>.get</code> does the same job faster and cleaner, and <code>isinstance</code> is best applied to abstract base classes (not concrete ones) for generality.</p>

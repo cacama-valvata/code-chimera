@@ -1,0 +1,73 @@
+<p>There are some great answers here to the first part of your question, but as for the second part (finding the line intersections) I'm not seeing a whole lot.</p>
+<p>I'd suggest you take a look at the <a href="https://en.wikipedia.org/wiki/Bentley%E2%80%93Ottmann_algorithm" rel="noreferrer">Bentley-Ottmann</a> algorithm.</p>
+<p>There are some python implementations of the algorithm <a href="https://github.com/splichte/lsi" rel="noreferrer">here</a> and <a href="https://github.com/ideasman42/isect_segments-bentley_ottmann" rel="noreferrer">here</a>.</p>
+<p>Edit: Using VeraPoseidon's Houghlines implementation and the second library linked here, I've managed to get the following result for intersection detection.  Credit to Vera and the library author for their good work.  The green squares represent a detected intersection.  There are a few errors, but  this seems like a really good starting place to me.  It seems as though most of the locations you actually want to detect an intersection have multiple intersections detected, so you could probably run an appropriately sized window over the image that looked for multiple intersections and deemed a true intersection as one where that window activated.</p>
+<p><a href="https://i.sstatic.net/1Tihf.png" rel="noreferrer"><img src="https://i.sstatic.net/1Tihf.png" alt="Bentley-Ottmann applied to Houghlines" /></a></p>
+<p>Here is the code I used to produce that result:</p>
+<pre><code>import cv2
+import numpy as np
+import isect_segments_bentley_ottmann.poly_point_isect as bot
+
+
+img = cv2.imread('parking.png')
+gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+kernel_size = 5
+blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size),0)
+
+low_threshold = 50
+high_threshold = 150
+edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
+
+rho = 1  # distance resolution in pixels of the Hough grid
+theta = np.pi / 180  # angular resolution in radians of the Hough grid
+threshold = 15  # minimum number of votes (intersections in Hough grid cell)
+min_line_length = 50  # minimum number of pixels making up a line
+max_line_gap = 20  # maximum gap in pixels between connectable line segments
+line_image = np.copy(img) * 0  # creating a blank to draw lines on
+
+# Run Hough on edge detected image
+# Output &quot;lines&quot; is an array containing endpoints of detected line segments
+lines = cv2.HoughLinesP(edges, rho, theta, threshold, np.array([]),
+                    min_line_length, max_line_gap)
+print(lines)
+points = []
+for line in lines:
+    for x1, y1, x2, y2 in line:
+        points.append(((x1 + 0.0, y1 + 0.0), (x2 + 0.0, y2 + 0.0)))
+        cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 5)
+
+lines_edges = cv2.addWeighted(img, 0.8, line_image, 1, 0)
+print(lines_edges.shape)
+#cv2.imwrite('line_parking.png', lines_edges)
+
+print points
+intersections = bot.isect_segments(points)
+print intersections
+
+for inter in intersections:
+    a, b = inter
+    for i in range(3):
+        for j in range(3):
+            lines_edges[int(b) + i, int(a) + j] = [0, 255, 0]
+
+cv2.imwrite('line_parking.png', lines_edges)
+</code></pre>
+<p>You can use something like this block of code for a strategy to remove multiple intersections in a small area:</p>
+<pre><code>for idx, inter in enumerate(intersections):
+    a, b = inter
+    match = 0
+    for other_inter in intersections[idx:]:
+        if other_inter == inter:
+            continue
+        c, d = other_inter
+        if abs(c-a) &lt; 15 and abs(d-b) &lt; 15:
+            match = 1
+            intersections[idx] = ((c+a)/2, (d+b)/2)
+            intersections.remove(other_inter)
+
+    if match == 0:
+        intersections.remove(inter)
+</code></pre>
+<p>Output image:<a href="https://i.sstatic.net/7tuW6.png" rel="noreferrer"><img src="https://i.sstatic.net/7tuW6.png" alt="Cleaned Output" /></a></p>
+<p>You'll have to play with the windowing function though.</p>

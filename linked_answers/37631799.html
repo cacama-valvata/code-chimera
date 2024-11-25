@@ -1,0 +1,7 @@
+<p>You need to set the format parameter in your call to the save function to 'JPEG':</p>
+
+<pre><code>from PIL import Image
+img = Image.open('car.jpg')
+new_img = img.resize((500,500))
+new_img.save("car_resized.jpg", "JPEG", optimize=True)
+</code></pre>

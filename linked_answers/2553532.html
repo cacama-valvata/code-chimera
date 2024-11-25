@@ -1,0 +1,14 @@
+<p>Are you trying to do this?</p>
+
+<pre><code>dict( (name,eval(name)) for name in ['some','list','of','vars'] )
+</code></pre>
+
+<p>Example </p>
+
+<pre><code>&gt;&gt;&gt; some= 1
+&gt;&gt;&gt; list= 2
+&gt;&gt;&gt; of= 3
+&gt;&gt;&gt; vars= 4
+&gt;&gt;&gt; dict( (name,eval(name)) for name in ['some','list','of','vars'] )
+{'list': 2, 'some': 1, 'vars': 4, 'of': 3}
+</code></pre>

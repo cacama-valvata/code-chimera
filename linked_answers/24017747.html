@@ -1,0 +1,46 @@
+<pre><code>def is_subseq(x, y):
+    it = iter(y)
+    return all(any(c == ch for c in it) for ch in x)
+
+assert is_subseq('india', 'indonesia')
+assert is_subseq('oman', 'romania')
+assert is_subseq('mali', 'malawi')
+assert not is_subseq('mali', 'banana')
+assert not is_subseq('ais', 'indonesia')
+assert not is_subseq('ca', 'abc')
+</code></pre>
+
+<p>Also works for any iterables:</p>
+
+<pre><code>assert is_subseq(['i', 'n', 'd', 'i', 'a'],
+                 ['i', 'n', 'd', 'o', 'n', 'e', 's', 'i', 'a'])
+</code></pre>
+
+<p><strong>UPDATE</strong></p>
+
+<p>Stefan Pochmann suggested this.</p>
+
+<pre><code>def is_subseq(x, y):
+    it = iter(y)
+    return all(c in it for c in x)
+</code></pre>
+
+<hr>
+
+<p>Both versions uses iterators; Iterator yields items that was not yielded in previous iteration.</p>
+
+<p>For example:</p>
+
+<pre><code>&gt;&gt;&gt; it = iter([1,2,3,4])
+&gt;&gt;&gt; for x in it:
+...     print(x)
+...     break
+...
+1
+&gt;&gt;&gt; for x in it:  # `1` is yielded in previous iteration. It's not yielded here.
+...     print(x)
+...
+2
+3
+4
+</code></pre>

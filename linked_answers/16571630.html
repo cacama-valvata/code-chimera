@@ -1,0 +1,48 @@
+<p>Try this context manager:</p>
+
+<pre><code>from io import StringIO 
+import sys
+
+class Capturing(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        del self._stringio    # free up some memory
+        sys.stdout = self._stdout
+</code></pre>
+
+<p>Usage:</p>
+
+<pre><code>with Capturing() as output:
+    do_something(my_object)
+</code></pre>
+
+<p><code>output</code> is now a list containing the lines printed by the function call.</p>
+
+<p>Advanced usage:</p>
+
+<p>What may not be obvious is that this can be done more than once and the results concatenated:</p>
+
+<pre><code>with Capturing() as output:
+    print('hello world')
+
+print('displays on screen')
+
+with Capturing(output) as output:  # note the constructor argument
+    print('hello world2')
+
+print('done')
+print('output:', output)
+</code></pre>
+
+<p>Output:</p>
+
+<pre class="lang-none prettyprint-override"><code>displays on screen                     
+done                                   
+output: ['hello world', 'hello world2']
+</code></pre>
+
+<p><em>Update</em>: They added <code>redirect_stdout()</code> to <a href="https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout" rel="noreferrer"><code>contextlib</code></a> in Python 3.4 (along with <code>redirect_stderr()</code>). So you could use <code>io.StringIO</code> with that to achieve a similar result (though <code>Capturing</code> being a list as well as a context manager is arguably more convenient).</p>

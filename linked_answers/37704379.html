@@ -1,0 +1,22 @@
+<p>It seems more pythonic to use a <code>for</code> loop.
+See the quote from <a href="https://docs.python.org/3.0/whatsnew/3.0.html#builtins" rel="noreferrer">What’s New In Python 3.0</a>.</p>
+<blockquote>
+<p>Removed <code>reduce()</code>. Use <code>functools.reduce()</code> if you really need it; however, 99 percent of the time an explicit <code>for</code> loop is more readable.</p>
+</blockquote>
+<pre><code>def nested_get(dic, keys):    
+    for key in keys:
+        dic = dic[key]
+    return dic
+
+def nested_set(dic, keys, value):
+    for key in keys[:-1]:
+        dic = dic.setdefault(key, {})
+    dic[keys[-1]] = value
+
+def nested_del(dic, keys):
+    for key in keys[:-1]:
+        dic = dic[key]
+    del dic[keys[-1]]
+</code></pre>
+<p>Note that the accepted solution doesn't set non-existing nested keys (it raises <code>KeyError</code>). Using the approach above will create non-existing nodes instead.</p>
+<p>The code works in both Python 2 and 3.</p>

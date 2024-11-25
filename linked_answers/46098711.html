@@ -1,0 +1,30 @@
+<p><a href="https://docs.python.org/3/library/logging.html#logging.basicConfig" rel="noreferrer"><code>logging.basicConfig()</code></a> can take a keyword argument <code>handlers</code> since Python 3.3, which simplifies logging setup a lot, especially when setting up multiple handlers with the same formatter:</p>
+
+<blockquote>
+  <p><strong><code>handlers</code></strong> &ndash; If specified, this should be an iterable of already created handlers to add to the root logger. Any handlers which don’t already have a formatter set will be assigned the default formatter created in this function.</p>
+</blockquote>
+
+<p>The whole setup can therefore be done with a single call like this:</p>
+
+<pre class="lang-py prettyprint-override"><code>import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("debug.log"),
+        logging.StreamHandler()
+    ]
+)
+</code></pre>
+
+<p>(Or with <code>import sys</code> + <code>StreamHandler(sys.stdout)</code> per original question's requirements – the default for StreamHandler is to write to stderr. Look at <a href="https://docs.python.org/3/library/logging.html#logrecord-attributes" rel="noreferrer">LogRecord attributes</a> if you want to customize the log format and add things like filename/line, thread info etc.)</p>
+
+<p>The setup above needs to be done only once near the beginning of the script. You can use the logging from all other places in the codebase later like this:</p>
+
+<pre class="lang-py prettyprint-override"><code>logging.info('Useful message')
+logging.error('Something bad happened')
+...
+</code></pre>
+
+<p>Note: If it doesn't work, someone else has probably already initialized the logging system differently. Comments suggest doing <code>logging.root.handlers = []</code> before the call to <code>basicConfig()</code>.</p>

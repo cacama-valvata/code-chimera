@@ -1,0 +1,94 @@
+<p>Here's how I would do this:</p>
+
+<pre><code>class ClassPropertyDescriptor(object):
+
+    def __init__(self, fget, fset=None):
+        self.fget = fget
+        self.fset = fset
+
+    def __get__(self, obj, klass=None):
+        if klass is None:
+            klass = type(obj)
+        return self.fget.__get__(obj, klass)()
+
+    def __set__(self, obj, value):
+        if not self.fset:
+            raise AttributeError("can't set attribute")
+        type_ = type(obj)
+        return self.fset.__get__(obj, type_)(value)
+
+    def setter(self, func):
+        if not isinstance(func, (classmethod, staticmethod)):
+            func = classmethod(func)
+        self.fset = func
+        return self
+
+def classproperty(func):
+    if not isinstance(func, (classmethod, staticmethod)):
+        func = classmethod(func)
+
+    return ClassPropertyDescriptor(func)
+
+
+class Bar(object):
+
+    _bar = 1
+
+    @classproperty
+    def bar(cls):
+        return cls._bar
+
+    @bar.setter
+    def bar(cls, value):
+        cls._bar = value
+
+
+# test instance instantiation
+foo = Bar()
+assert foo.bar == 1
+
+baz = Bar()
+assert baz.bar == 1
+
+# test static variable
+baz.bar = 5
+assert foo.bar == 5
+
+# test setting variable on the class
+Bar.bar = 50
+assert baz.bar == 50
+assert foo.bar == 50
+</code></pre>
+
+<p>The setter didn't work at the time we call  <code>Bar.bar</code>, because we are calling
+<code>TypeOfBar.bar.__set__</code>, which is not <code>Bar.bar.__set__</code>.</p>
+
+<p>Adding a metaclass definition solves this:</p>
+
+<pre><code>class ClassPropertyMetaClass(type):
+    def __setattr__(self, key, value):
+        if key in self.__dict__:
+            obj = self.__dict__.get(key)
+        if obj and type(obj) is ClassPropertyDescriptor:
+            return obj.__set__(self, value)
+
+        return super(ClassPropertyMetaClass, self).__setattr__(key, value)
+
+# and update class define:
+#     class Bar(object):
+#        __metaclass__ = ClassPropertyMetaClass
+#        _bar = 1
+
+# and update ClassPropertyDescriptor.__set__
+#    def __set__(self, obj, value):
+#       if not self.fset:
+#           raise AttributeError("can't set attribute")
+#       if inspect.isclass(obj):
+#           type_ = obj
+#           obj = None
+#       else:
+#           type_ = type(obj)
+#       return self.fset.__get__(obj, type_)(value)
+</code></pre>
+
+<p>Now all will be fine.</p>

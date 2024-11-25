@@ -1,0 +1,13 @@
+<pre class="lang-py prettyprint-override"><code>from functools import reduce
+
+def factors(n):
+    return set(reduce(
+        list.__add__,
+        ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
+</code></pre>
+<p>This will return all of the factors, very quickly, of a number <code>n</code>.</p>
+<p>Why square root as the upper limit?</p>
+<p><code>sqrt(x) * sqrt(x) = x</code>. So if the two factors are the same, they're both the square root. If you make one factor bigger, you have to make the other factor smaller. This means that one of the two will always be less than or equal to <code>sqrt(x)</code>, so you only have to search up to that point to find one of the two matching factors. You can then use <code>x // fac1</code> to get <code>fac2</code>.</p>
+<p>The <code>reduce(list.__add__, ...)</code> is taking the little lists of <code>[fac1, fac2]</code> and joining them together in one long list.</p>
+<p>The <code>[i, n//i] for i in range(1, int(sqrt(n)) + 1) if n % i == 0</code> returns a pair of factors if the remainder when you divide <code>n</code> by the smaller one is zero (it doesn't need to check the larger one too; it just gets that by dividing <code>n</code> by the smaller one.)</p>
+<p>The <code>set(...)</code> on the outside is getting rid of duplicates, which only happens for perfect squares. For <code>n = 4</code>, this will return <code>2</code> twice, so <code>set</code> gets rid of one of them.</p>

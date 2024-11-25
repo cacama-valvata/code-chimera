@@ -1,0 +1,33 @@
+<p>Since Python 3.4 there is a solution is the stdlib: <a href="https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout" rel="noreferrer">https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout</a></p>
+<pre><code>from io import StringIO
+from contextlib import redirect_stdout
+
+f = StringIO()
+with redirect_stdout(f):
+    help(pow)
+s = f.getvalue()
+</code></pre>
+<p>In older versions you can write a context manager to handle replacing stdout:</p>
+<pre><code>import sys
+from io import StringIO
+import contextlib
+
+@contextlib.contextmanager
+def stdoutIO(stdout=None):
+    old = sys.stdout
+    if stdout is None:
+        stdout = StringIO()
+    sys.stdout = stdout
+    yield stdout
+    sys.stdout = old
+
+code = &quot;&quot;&quot;
+i = [0,1,2]
+for j in i :
+    print j
+&quot;&quot;&quot;
+with stdoutIO() as s:
+    exec(code)
+
+print(&quot;out:&quot;, s.getvalue())
+</code></pre>

@@ -1,0 +1,18 @@
+<p>Maybe <a href="https://docs.python.org/3/library/collections.html#collections.Counter" rel="noreferrer"><code>collections.Counter</code></a> could solve your problem:</p>
+<pre><code>from collections import Counter
+Counter(elem[0] for elem in list1)
+</code></pre>
+<p>returns</p>
+<pre><code>Counter({'12392': 2, '7862': 1})
+</code></pre>
+<p>It is fast since it iterates over your list just once. You iterate over entries and then try to get a count of these entries within your list. That cannot be done with <code>.count</code>, but might be done as follows:</p>
+<pre><code>for entry in list1:
+    print(sum(1 for elem in list1 if elem[0] == entry[0]))
+</code></pre>
+<p>But seriously, have a look at <code>collections.Counter</code>.</p>
+<p><strong>EDIT</strong>: <em>I actually need the total amount of entries which has a value more than 1.</em></p>
+<p>You can still use the <code>Counter</code>:</p>
+<pre><code>c = Counter(elem[0] for elem in list1)
+sum(v for k, v in c.iteritems() if v &gt; 1)
+</code></pre>
+<p>returns <code>2</code>, i.e. the sum of counts that are higher than 1.</p>

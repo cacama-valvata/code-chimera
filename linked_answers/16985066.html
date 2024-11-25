@@ -1,0 +1,81 @@
+<blockquote>
+<p>unfortunately, this module needs to be inside the package, and it also
+needs to be runnable as a script, sometimes. Any idea how I could
+achieve that?</p>
+</blockquote>
+<p>It's quite common to have a layout like this...</p>
+<pre><code>main.py
+mypackage/
+    __init__.py
+    mymodule.py
+    myothermodule.py
+</code></pre>
+<p>...with a <code>mymodule.py</code> like this...</p>
+<pre><code>#!/usr/bin/env python3
+
+# Exported function
+def as_int(a):
+    return int(a)
+
+# Test function for module  
+def _test():
+    assert as_int('1') == 1
+
+if __name__ == '__main__':
+    _test()
+</code></pre>
+<p>...a <code>myothermodule.py</code> like this...</p>
+<pre><code>#!/usr/bin/env python3
+
+from .mymodule import as_int
+
+# Exported function
+def add(a, b):
+    return as_int(a) + as_int(b)
+
+# Test function for module  
+def _test():
+    assert add('1', '1') == 2
+
+if __name__ == '__main__':
+    _test()
+</code></pre>
+<p>...and a <code>main.py</code> like this...</p>
+<pre><code>#!/usr/bin/env python3
+
+from mypackage.myothermodule import add
+
+def main():
+    print(add('1', '1'))
+
+if __name__ == '__main__':
+    main()
+</code></pre>
+<p>...which works fine when you run <code>main.py</code> or <code>mypackage/mymodule.py</code>, but fails with <code>mypackage/myothermodule.py</code>, due to the relative import...</p>
+<pre><code>from .mymodule import as_int
+</code></pre>
+<p>The way you're supposed to run it is by using the -m option and giving the path in the Python module system (rather than in the filesystem)...</p>
+<pre><code>python3 -m mypackage.myothermodule
+</code></pre>
+<p>...but it's somewhat verbose, and doesn't mix well with a shebang line like <code>#!/usr/bin/env python3</code>.</p>
+<p>An alternative is to avoid using relative imports, and just use...</p>
+<pre><code>from mypackage.mymodule import as_int
+</code></pre>
+<p>Either way, you'll need to run from the parent of <code>mypackage</code>, or add that directory to <code>PYTHONPATH</code> (either one will ensure that <code>mypackage</code> is in the sys.path <a href="https://docs.python.org/3/library/sys_path_init.html" rel="noreferrer">module search path</a>). Or, if you want it to work &quot;out of the box&quot;, you can frob the <code>PYTHONPATH</code> in code first with this...</p>
+<pre><code>import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from mypackage.mymodule import as_int
+</code></pre>
+<p>It's kind of a pain, but there's a clue as to why in <a href="http://mail.python.org/pipermail/python-3000/2007-April/006793.html" rel="noreferrer">an email</a> written by a certain Guido van Rossum...</p>
+<blockquote>
+<p>I'm -1 on this and on any other proposed twiddlings of the <code>__main__</code>
+machinery. The only use case seems to be running scripts that happen
+to be living inside a module's directory, which I've always seen as an
+antipattern. To make me change my mind you'd have to convince me that
+it isn't.</p>
+</blockquote>
+<p>Whether running scripts inside a package is an antipattern or not is subjective, but personally I find it really useful in a package I have which contains some custom wxPython widgets, so I can run the script for any of the source files to display a <code>wx.Frame</code> containing only that widget for testing purposes.</p>

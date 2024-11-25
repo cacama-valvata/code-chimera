@@ -1,0 +1,23 @@
+<p>This handles C++-style comments, C-style comments, strings and simple nesting thereof.</p>
+
+<pre><code>def comment_remover(text):
+    def replacer(match):
+        s = match.group(0)
+        if s.startswith('/'):
+            return " " # note: a space and not an empty string
+        else:
+            return s
+    pattern = re.compile(
+        r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        re.DOTALL | re.MULTILINE
+    )
+    return re.sub(pattern, replacer, text)
+</code></pre>
+
+<p>Strings needs to be included, because comment-markers inside them does not start a comment.</p>
+
+<p><strong>Edit:</strong> re.sub didn't take any flags, so had to compile the pattern first.</p>
+
+<p><strong>Edit2:</strong> Added character literals, since they could contain quotes that would otherwise be recognized as string delimiters.</p>
+
+<p><strong>Edit3:</strong> Fixed the case where a legal expression <code>int/**/x=5;</code> would become <code>intx=5;</code> which would not compile, by replacing the comment with a space rather then an empty string.</p>

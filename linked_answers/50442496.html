@@ -1,0 +1,53 @@
+<p>Your structure is not the recommended one, you should use:</p>
+
+<pre><code>import click
+
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+@click.group(context_settings=CONTEXT_SETTINGS)
+def cli():
+    pass
+
+
+@cli.command(help='prints "duh..."')
+def duh():
+    click.echo('duh...')
+
+if __name__ == '__main__':
+    cli()
+</code></pre>
+
+<p>And then <code>python test_click.py</code> will print help message:</p>
+
+<pre><code>Usage: test_click.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  duh  prints "duh..."
+</code></pre>
+
+<p>So you can use <code>python test_click.py duh</code> to call <code>duh</code>.</p>
+
+<h1>Update</h1>
+
+<pre><code>import click
+
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('--toduhornot', is_flag=True, help='prints "duh..."')
+def duh(toduhornot):
+    if toduhornot:
+        click.echo('duh...')
+    else:
+        with click.Context(duh) as ctx:
+            click.echo(ctx.get_help())
+
+if __name__ == '__main__':
+    duh()
+</code></pre>

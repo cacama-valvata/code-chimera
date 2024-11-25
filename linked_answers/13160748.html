@@ -1,0 +1,25 @@
+<p><strong>IF</strong> it's used heavily in the code you want to run but that code doesn't have to be maintained long-term (or you need a quick fix irrespective of potential maintenance headaches in the future) then you could duck punch (aka monkey patch) it in wherever subprocess is imported...</p>
+
+<p>Just lift the code from 2.7 and insert it thusly...</p>
+
+<pre><code>import subprocess
+
+if "check_output" not in dir( subprocess ): # duck punch it in!
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+    subprocess.check_output = f
+</code></pre>
+
+<p>Minor fidgeting may be required.</p>
+
+<p>Do bear in mind though the onus is on you to maintain dirty little backports like this. If bugs are discovered and corrected in the latest python then you a) have to notice that and b) update your version if you want to stay secure. Also, overriding &amp; defining internal functions yourself is the next guy's worst nightmare, especially when the next guy is YOU several years down the line and you've forgot all about the grody hacks you did last time! In summary: it's very rarely a good idea.</p>
