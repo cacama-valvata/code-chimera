@@ -1,6 +1,7 @@
 import requests
 import json
 import urllib
+import subprocess
 from multiprocessing.dummy import Pool as ThreadPool
 
 # https://docs.github.com/en/search-github/searching-on-github/searching-code
