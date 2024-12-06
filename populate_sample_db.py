@@ -15,7 +15,7 @@ ANSWER_REGEX = re.compile(r"stackoverflow\.com/a")
 
 if __name__ == "__main__":
     db = sqlite3.connect("samples.db", autocommit=False)
-    db.execute("CREATE TABLE IF NOT EXISTS samples(file TEXT, commit_timestamp DATETIME, question_link BOOLEAN DEFAULT FALSE, answer_link BOOLEAN DEFAULT FALSE)")
+    db.execute("CREATE TABLE IF NOT EXISTS samples(file TEXT, commit_timestamp DATETIME, question_link BOOLEAN DEFAULT FALSE, answer_link BOOLEAN DEFAULT FALSE, classification TEXT)")
 
     sample_entries = []
     samples_dir = pathlib.Path("samples")

@@ -6,3 +6,60 @@ rg --files-with-matches 'stackoverflow\.com/a' samples
 
 
 similar for /q for questions and /[^aq] for neither (aka useless)
+
+==========================
+
+Categories:
+
+useless ones
+- other_link: not a question or answer
+- question: only links to question
+- verbatim: copied code verbatim from SO
+- dead: dead answer link
+- notcode: not a code answer
+  - ex: answer 40674915 - locations of chrome.exe on various versions of windows
+
+idk?
+- notpython: code, but not python
+  - ex: answer 2039745 is C++, but logic is ported to python
+    - corresponding sample is wkentaro_labelme... - might be more interesting actually?
+- reasoning (?): answer has code, but not taken by sample
+  - ex: wstchhwp_YOLO... - link "to avoid TypeSpec related error" mentioned in answer, but code isn't taken
+  - unsure of this one, might be better suited to notcode but idk if we want to differentiate
+
+interesting:
+- looked: looked at it, more analysis required
+- structurally_equivalent: code is very similar, stuff may be moved around
+  - ex: zeek_btest... `which` function is verbatim with two exceptions: import move & variable names
+- identifiers: only identifiers changed (function/variable names)
+- slightly_different: some slight changes to code, but functionality is otherwise effectively the same
+  - ex: yub3r_before... - different python 3 check & no read from buffer, but else branch verbatim sans comments
+
+- (NULL: not looked at yet)
+
+multiple tags for a single file: use slashes (e.g. `other_link/question`)
+
+THINGS TO PROBABLY IGNORE:
+- comments: unless they steal them too ig??
+
+==========================
+
+Querying DB:
+
+to avoid working on the same stuff prob do different ASC/DESC (haha binary file diffs):
+`SELECT rowid, file FROM samples WHERE classification IS NULL ORDER BY rowid DESC LIMIT 10;`
+
+==========================
+
+specific sample changes:
+
+241506: changed function name but nothing else (not even formatting)
+264303: changed return value/ordering of statements from example but otherwise followed
+295466: slugify -> _slugify, turned into method, otherwise the same (even stole docstring lmfao)
+576816: lua script???
+
+==========================
+
+other notes:
+
+- why do we have 4 things from vignywang lmfao, they're all the same too
