@@ -1,0 +1,38 @@
+<p>The other answers all point out that you should not catch generic exceptions, but no one seems to want to tell you why, which is essential to understanding when you can break the &quot;rule&quot;. <a href="https://stackoverflow.com/a/736029/566644">Here</a> is an explanation. Basically, it's so that you don't hide:</p>
+<ul>
+<li>the fact that an error occurred</li>
+<li>the specifics of the error that occurred (<a href="http://en.wikipedia.org/wiki/Error_hiding" rel="noreferrer">error hiding antipattern</a>)</li>
+</ul>
+<p>So as long as you take care to do none of those things, it's OK to catch the generic exception. For instance, you could provide information about the exception to the user another way, like:</p>
+<ul>
+<li>Present exceptions as dialogs in a GUI</li>
+<li>Transfer exceptions from a worker thread or process to the controlling thread or process in a multithreading or multiprocessing application</li>
+</ul>
+<p>So how to catch the generic exception? There are several ways. If you just want the exception object, do it like this:</p>
+<pre><code>try:
+    someFunction()
+except Exception as ex:
+    template = &quot;An exception of type {0} occurred. Arguments:\n{1!r}&quot;
+    message = template.format(type(ex).__name__, ex.args)
+    print(message)
+</code></pre>
+<p>Make <em>sure</em> <code>message</code> is brought to the attention of the user in a hard-to-miss way! Printing it, as shown above, may not be enough if the message is buried in lots of other messages. Failing to get the users attention is tantamount to swallowing all exceptions, and if there's one impression you should have come away with after reading the answers on this page, it's that this is <em>not a good thing</em>. Ending the except block with a <code>raise</code> statement will remedy the problem by transparently reraising the exception that was caught.</p>
+<p>The difference between the above and using just <code>except:</code> without any argument is twofold:</p>
+<ul>
+<li>A bare <code>except:</code> doesn't give you the exception object to inspect</li>
+<li>The exceptions <code>SystemExit</code>, <code>KeyboardInterrupt</code> and <code>GeneratorExit</code> aren't caught by the above code, which is generally what you want. See the <a href="http://docs.python.org/2/library/exceptions.html#exception-hierarchy" rel="noreferrer">exception hierarchy</a>.</li>
+</ul>
+<p>If you also want the same stacktrace you get if you do not catch the exception, you can get that like this (still inside the except clause):</p>
+<pre><code>import traceback
+print traceback.format_exc()
+</code></pre>
+<p>If you use the <a href="http://docs.python.org/library/logging.html" rel="noreferrer"><code>logging</code></a> module, you can print the exception to the log (along with a message) like this:</p>
+<pre><code>import logging
+log = logging.getLogger()
+log.exception(&quot;Message for you, sir!&quot;)
+</code></pre>
+<p>If you want to dig deeper and examine the stack, look at variables etc., use the <a href="http://docs.python.org/library/pdb.html#pdb.post_mortem" rel="noreferrer"><code>post_mortem</code></a> function of the <code>pdb</code> module inside the except block:</p>
+<pre><code>import pdb
+pdb.post_mortem()
+</code></pre>
+<p>I've found this last method to be invaluable when hunting down bugs.</p>

@@ -1,0 +1,45 @@
+<p>On Python ≥ 3.5, use <a href="https://docs.python.org/library/pathlib.html#pathlib.Path.mkdir" rel="noreferrer"><code>pathlib.Path.mkdir</code></a>:</p>
+
+<pre><code>from pathlib import Path
+Path("/my/directory").mkdir(parents=True, exist_ok=True)
+</code></pre>
+
+<p>For older versions of Python, I see two answers with good qualities, each with a small flaw, so I will give my take on it:</p>
+
+<p>Try <a href="https://docs.python.org/library/os.path.html#os.path.exists" rel="noreferrer"><code>os.path.exists</code></a>, and consider <a href="https://docs.python.org/library/os.html#os.makedirs" rel="noreferrer"><code>os.makedirs</code></a> for the creation.</p>
+
+<pre><code>import os
+if not os.path.exists(directory):
+    os.makedirs(directory)
+</code></pre>
+
+<p>As noted in comments and elsewhere, there's a race condition &ndash; if the directory is created between the <code>os.path.exists</code> and the <code>os.makedirs</code> calls, the <code>os.makedirs</code> will fail with an <code>OSError</code>. Unfortunately, blanket-catching <code>OSError</code> and continuing is not foolproof, as it will ignore a failure to create the directory due to other factors, such as insufficient permissions, full disk, etc.</p>
+
+<p>One option would be to trap the <code>OSError</code> and examine the embedded error code (see <a href="https://stackoverflow.com/questions/273698/is-there-a-cross-platform-way-of-getting-information-from-pythons-oserror">Is there a cross-platform way of getting information from Python’s OSError</a>):</p>
+
+<pre><code>import os, errno
+
+try:
+    os.makedirs(directory)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise
+</code></pre>
+
+<p>Alternatively, there could be a second <code>os.path.exists</code>, but suppose another created the directory after the first check, then removed it before the second one &ndash; we could still be fooled. </p>
+
+<p>Depending on the application, the danger of concurrent operations may be more or less than the danger posed by other factors such as file permissions. The developer would have to know more about the particular application being developed and its expected environment before choosing an implementation.</p>
+
+<p>Modern versions of Python improve this code quite a bit, both by exposing <a href="https://docs.python.org/3.3/library/exceptions.html?#FileExistsError" rel="noreferrer"><code>FileExistsError</code></a> (in 3.3+)...</p>
+
+<pre><code>try:
+    os.makedirs("path/to/directory")
+except FileExistsError:
+    # directory already exists
+    pass
+</code></pre>
+
+<p>...and by allowing <a href="https://docs.python.org/3.2/library/os.html#os.makedirs" rel="noreferrer">a keyword argument to <code>os.makedirs</code> called <code>exist_ok</code></a> (in 3.2+).</p>
+
+<pre><code>os.makedirs("path/to/directory", exist_ok=True)  # succeeds even if directory exists.
+</code></pre>

@@ -1,0 +1,50 @@
+<p>Reflection in python is a lot easier and far more flexible than it is in Java.</p>
+<p>I recommend reading this <a href="https://web.archive.org/web/20160304105303/http://www.diveintopython.net/power_of_introspection/index.html" rel="noreferrer">tutorial</a> (on archive.org)</p>
+<p>There's no direct function (that I know of) which takes a fully qualified class name and returns the class, however you have all the pieces needed to build that, and you can connect them together.</p>
+<p>One bit of advice though: don't try to program in Java style when you're in python.</p>
+<p>If you can explain what is it that you're trying to do, maybe we can help you find a more pythonic way of doing it.</p>
+<p>Here's a function that does what you want:</p>
+<pre><code>def get_class( kls ):
+    parts = kls.split('.')
+    module = &quot;.&quot;.join(parts[:-1])
+    m = __import__( module )
+    for comp in parts[1:]:
+        m = getattr(m, comp)            
+    return m
+</code></pre>
+<p>You can use the return value of this function as if it were the class itself.</p>
+<p>Here's a usage example:</p>
+<pre><code>&gt;&gt;&gt; D = get_class(&quot;datetime.datetime&quot;)
+&gt;&gt;&gt; D
+&lt;type 'datetime.datetime'&gt;
+&gt;&gt;&gt; D.now()
+datetime.datetime(2009, 1, 17, 2, 15, 58, 883000)
+&gt;&gt;&gt; a = D( 2010, 4, 22 )
+&gt;&gt;&gt; a
+datetime.datetime(2010, 4, 22, 0, 0)
+&gt;&gt;&gt; 
+</code></pre>
+<p><strong>How does that work?</strong></p>
+<p>We're using <code>__import__</code> to import the module that holds the class, which required that we first extract the module name from the fully qualified name. Then we import the module:</p>
+<pre><code>m = __import__( module )
+</code></pre>
+<p>In this case, <code>m</code> will only refer to the top level module,</p>
+<p>For example, if your class lives in <code>foo.baz</code> module, then <code>m</code> will be the module <code>foo</code><br />
+We can easily obtain a reference to <code>foo.baz</code> using <code>getattr( m, 'baz' )</code></p>
+<p>To get from the top level module to the class, have to recursively use <code>gettatr</code> on the parts of the class name</p>
+<p>Say for example, if you class name is <code>foo.baz.bar.Model</code> then we do this:</p>
+<pre><code>m = __import__( &quot;foo.baz.bar&quot; ) #m is package foo
+m = getattr( m, &quot;baz&quot; ) #m is package baz
+m = getattr( m, &quot;bar&quot; ) #m is module bar
+m = getattr( m, &quot;Model&quot; ) #m is class Model
+</code></pre>
+<p>This is what's happening in this loop:</p>
+<pre><code>for comp in parts[1:]:
+    m = getattr(m, comp)    
+</code></pre>
+<p>At the end of the loop, <code>m</code> will be a reference to the class. This means that <code>m</code> is actually the class itslef, you can do for instance:</p>
+<pre><code>a = m() #instantiate a new instance of the class    
+b = m( arg1, arg2 ) # pass arguments to the constructor
+
+  
+</code></pre>

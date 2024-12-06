@@ -1,0 +1,6 @@
+<p>Both <code>getsize()</code> and <code>stat()</code> will throw an exception if the file does not exist. This function will return True/False - usually without throwing:</p>
+<pre><code>import os
+def is_non_zero_file(fpath):  
+    return os.path.isfile(fpath) and os.path.getsize(fpath) &gt; 0
+</code></pre>
+<p>There is a race condition because the file may be removed between the calls to os.path.isfile(fpath) and os.path.getsize(fpath), in which case the proposed function will still raise an exception</p>

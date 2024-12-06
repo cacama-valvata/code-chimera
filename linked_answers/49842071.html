@@ -1,0 +1,35 @@
+<p><strong>VALID</strong> padding: this is with zero padding. Hope there is no confusion. </p>
+
+<pre><code>x = tf.constant([[1., 2., 3.], [4., 5., 6.],[ 7., 8., 9.], [ 7., 8., 9.]])
+x = tf.reshape(x, [1, 4, 3, 1])
+valid_pad = tf.nn.max_pool(x, [1, 2, 2, 1], [1, 2, 2, 1], padding='VALID')
+print (valid_pad.get_shape()) # output--&gt;(1, 2, 1, 1)
+</code></pre>
+
+<p><strong>SAME</strong>  padding: This is kind of tricky to understand in the first place because we have to consider two conditions separately as mentioned in the <a href="https://www.tensorflow.org/api_guides/python/nn#Pooling" rel="noreferrer">official docs</a>. </p>
+
+<p>Let's take input as <img src="https://latex.codecogs.com/gif.latex?n_i" title="n_i" /> , output as <img src="https://latex.codecogs.com/gif.latex?n_o" title="n_o" />, padding as <img src="https://latex.codecogs.com/gif.latex?p_i" title="p_i" />,  stride as <img src="https://latex.codecogs.com/gif.latex?s" title="s" /> and kernel size as <img src="https://latex.codecogs.com/gif.latex?k" title="k" /> (only a single dimension is considered)</p>
+
+<p>Case 01: <img src="https://latex.codecogs.com/gif.latex?n_i&space;%5Cmod&space;s&space;=&space;0" title="n_i \mod s = 0" /> :<img src="https://latex.codecogs.com/gif.latex?p_i&space;=&space;max(k-s&space;,0)" title="p_i = max(k-s ,0)" /></p>
+
+<p>Case 02:  <img src="https://latex.codecogs.com/gif.latex?n_i&space;%5Cmod&space;s&space;%5Cneq&space;0" title="n_i \mod s \neq 0" /> : <img src="https://latex.codecogs.com/gif.latex?p_i&space;=&space;max(k&space;-&space;(n_i%5Cmod&space;s)),&space;0)" title="p_i = max(k - (n_i\mod s)), 0)" /></p>
+
+<p><img src="https://latex.codecogs.com/gif.latex?p_i" title="p_i" /> is calculated such that the minimum value which can be taken for padding. Since value of <img src="https://latex.codecogs.com/gif.latex?p_i" title="p_i" /> is known, value of <img src="https://latex.codecogs.com/gif.latex?n_0" title="n_0" /> can be found using this formula <img src="https://latex.codecogs.com/gif.latex?(n_i&space;-&space;k&space;&plus;&space;2p_i)/2&space;&plus;&space;1&space;=&space;n_0" title="(n_i - k + 2p_i)/2 + 1 = n_0" />. </p>
+
+<p>Let's work out this example:</p>
+
+<pre><code>x = tf.constant([[1., 2., 3.], [4., 5., 6.],[ 7., 8., 9.], [ 7., 8., 9.]])
+x = tf.reshape(x, [1, 4, 3, 1])
+same_pad = tf.nn.max_pool(x, [1, 2, 2, 1], [1, 2, 2, 1], padding='SAME')
+print (same_pad.get_shape()) # --&gt; output (1, 2, 2, 1)
+</code></pre>
+
+<p>Here the dimension of x is (3,4). Then if the horizontal direction is taken (3):</p>
+
+<p><img src="https://latex.codecogs.com/gif.latex?n_i&space;=&space;3,&space;k&space;=2,&space;s&space;=2,&space;p_i&space;=&space;2&space;-&space;(3%5Cmod&space;2)&space;=&space;1,&space;n_0&space;=&space;int&space;(%5Cfrac%7B3-2&plus;2*1%7D%7B2%7D&space;&plus;&space;1)&space;=&space;2" title="n_i = 3, k =2, s =2, p_i = 2 - (3\mod 2) = 1, n_0 = floor (\frac{3-2+2*1}{2} + 1) = 2" /></p>
+
+<p>If the vertial direction is taken (4):</p>
+
+<p><img src="https://latex.codecogs.com/gif.latex?n_i&space;=&space;4,&space;k&space;=2,&space;s&space;=2,&space;p_i&space;=&space;2&space;-&space;2&space;=&space;0,&space;n_0&space;=&space;int&space;(%5Cfrac%7B3-2&plus;2*0%7D%7B2%7D&space;&plus;&space;1)&space;=&space;2" title="n_i = 4, k =2, s =2, p_i = 2 - 2 = 0, n_0 = floor (\frac{3-2+2*0}{2} + 1) = 2" /></p>
+
+<p>Hope this will help to understand how actually <strong>SAME</strong> padding works in TF. </p>

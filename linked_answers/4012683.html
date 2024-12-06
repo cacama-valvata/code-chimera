@@ -1,0 +1,27 @@
+<p>I don't know if this helps or not but this is what I get in DOS mode:</p>
+
+<pre><code>C:\Python27&gt;python Lib\codingtest.py нер
+['Lib\\codingtest.py', '\xed\xe5\xf0']
+
+C:\Python27&gt;python Lib\codingtest.py hello
+['Lib\\codingtest.py', 'hello']
+</code></pre>
+
+<p>In IDLE:</p>
+
+<pre><code>&gt;&gt;&gt; print "hello"
+hello
+&gt;&gt;&gt; "hello"
+'hello'
+&gt;&gt;&gt; "привет"
+'\xef\xf0\xe8\xe2\xe5\xf2'
+&gt;&gt;&gt; print "привет"
+привет
+&gt;&gt;&gt; sys.getdefaultencoding()
+'ascii'
+&gt;&gt;&gt; 
+</code></pre>
+
+<p>What can we deduce from this? I don't know yet... I'll comment in a little bit.</p>
+
+<p><strong>A little bit later</strong>: <code>sys.argv</code> is encoded with <code>sys.stdin.encoding</code> and not <code>sys.getdefaultencoding()</code></p>

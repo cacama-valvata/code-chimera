@@ -1,0 +1,56 @@
+<p>From an efficiency perspective, you're not going to beat </p>
+
+<pre><code>s.translate(None, string.punctuation)
+</code></pre>
+
+<p>For higher versions of Python use the following code:</p>
+
+<pre><code>s.translate(str.maketrans('', '', string.punctuation))
+</code></pre>
+
+<p>It's performing raw string operations in C with a lookup table - there's not much that will beat that but writing your own C code.</p>
+
+<p>If speed isn't a worry, another option though is:</p>
+
+<pre><code>exclude = set(string.punctuation)
+s = ''.join(ch for ch in s if ch not in exclude)
+</code></pre>
+
+<p>This is faster than s.replace with each char, but won't perform as well as non-pure python approaches such as regexes or string.translate, as you can see from the below timings.  For this type of problem, doing it at as low a level as possible pays off.</p>
+
+<p>Timing code:</p>
+
+<pre><code>import re, string, timeit
+
+s = "string. With. Punctuation"
+exclude = set(string.punctuation)
+table = string.maketrans("","")
+regex = re.compile('[%s]' % re.escape(string.punctuation))
+
+def test_set(s):
+    return ''.join(ch for ch in s if ch not in exclude)
+
+def test_re(s):  # From Vinko's solution, with fix.
+    return regex.sub('', s)
+
+def test_trans(s):
+    return s.translate(table, string.punctuation)
+
+def test_repl(s):  # From S.Lott's solution
+    for c in string.punctuation:
+        s=s.replace(c,"")
+    return s
+
+print "sets      :",timeit.Timer('f(s)', 'from __main__ import s,test_set as f').timeit(1000000)
+print "regex     :",timeit.Timer('f(s)', 'from __main__ import s,test_re as f').timeit(1000000)
+print "translate :",timeit.Timer('f(s)', 'from __main__ import s,test_trans as f').timeit(1000000)
+print "replace   :",timeit.Timer('f(s)', 'from __main__ import s,test_repl as f').timeit(1000000)
+</code></pre>
+
+<p>This gives the following results:</p>
+
+<pre><code>sets      : 19.8566138744
+regex     : 6.86155414581
+translate : 2.12455511093
+replace   : 28.4436721802
+</code></pre>

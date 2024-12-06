@@ -1,0 +1,56 @@
+<p>Here is a class for a bidirectional <code>dict</code>, inspired by <a href="https://stackoverflow.com/questions/7657457/finding-key-from-value-in-python-dictionar">Finding key from value in Python dictionary</a> and modified to allow the following 2) and 3).</p>
+<p>Note that :</p>
+<ul>
+<li>
+<ol>
+<li>The <em>inverse directory</em> <code>bd.inverse</code> auto-updates itself when the standard dict <code>bd</code> is modified.</li>
+</ol>
+</li>
+<li>
+<ol start="2">
+<li>The <em>inverse directory</em> <code>bd.inverse[value]</code> is always a <strong>list</strong> of <code>key</code> such that <code>bd[key] == value</code>.</li>
+</ol>
+</li>
+<li>
+<ol start="3">
+<li>Unlike the <code>bidict</code> module from <a href="https://pypi.python.org/pypi/bidict" rel="noreferrer">https://pypi.python.org/pypi/bidict</a>, here we can have 2 keys having same value, this is <em>very important</em>.</li>
+</ol>
+</li>
+</ul>
+<p><strong>Code:</strong></p>
+<pre><code>class bidict(dict):
+    def __init__(self, *args, **kwargs):
+        super(bidict, self).__init__(*args, **kwargs)
+        self.inverse = {}
+        for key, value in self.items():
+            self.inverse.setdefault(value, []).append(key) 
+
+    def __setitem__(self, key, value):
+        if key in self:
+            self.inverse[self[key]].remove(key) 
+        super(bidict, self).__setitem__(key, value)
+        self.inverse.setdefault(value, []).append(key)        
+
+    def __delitem__(self, key):
+        self.inverse.setdefault(self[key], []).remove(key)
+        if self[key] in self.inverse and not self.inverse[self[key]]: 
+            del self.inverse[self[key]]
+        super(bidict, self).__delitem__(key)
+</code></pre>
+<p><strong>Usage example:</strong></p>
+<pre><code>bd = bidict({'a': 1, 'b': 2})  
+print(bd)                     # {'a': 1, 'b': 2}                 
+print(bd.inverse)             # {1: ['a'], 2: ['b']}
+bd['c'] = 1                   # Now two keys have the same value (= 1)
+print(bd)                     # {'a': 1, 'c': 1, 'b': 2}
+print(bd.inverse)             # {1: ['a', 'c'], 2: ['b']}
+del bd['c']
+print(bd)                     # {'a': 1, 'b': 2}
+print(bd.inverse)             # {1: ['a'], 2: ['b']}
+del bd['a']
+print(bd)                     # {'b': 2}
+print(bd.inverse)             # {2: ['b']}
+bd['b'] = 3
+print(bd)                     # {'b': 3}
+print(bd.inverse)             # {2: [], 3: ['b']}
+</code></pre>

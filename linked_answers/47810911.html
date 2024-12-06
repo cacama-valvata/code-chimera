@@ -1,0 +1,29 @@
+<p>If you want to replace an empty string and records with only spaces, the <strong>correct answer is</strong>!:</p>
+
+<pre><code>df = df.replace(r'^\s*$', np.nan, regex=True)
+</code></pre>
+
+<p>The accepted answer</p>
+
+<pre><code>df.replace(r'\s+', np.nan, regex=True)
+</code></pre>
+
+<p>Does not replace an empty string!, you can try yourself with the given example slightly updated:</p>
+
+<pre><code>df = pd.DataFrame([
+    [-0.532681, 'foo', 0],
+    [1.490752, 'bar', 1],
+    [-1.387326, 'fo o', 2],
+    [0.814772, 'baz', ' '],     
+    [-0.222552, '   ', 4],
+    [-1.176781,  'qux', ''],         
+], columns='A B C'.split(), index=pd.date_range('2000-01-01','2000-01-06'))
+</code></pre>
+
+<p>Note, also that 'fo o' is not replaced with Nan, though it contains a space.
+Further note, that a simple:</p>
+
+<pre><code>df.replace(r'', np.NaN)
+</code></pre>
+
+<p>Does not work either - try it out.</p>

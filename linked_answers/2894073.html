@@ -1,0 +1,42 @@
+<p>These paired functions will find the longest common string in any arbitrary array of strings:</p>
+
+<pre><code>def long_substr(data):
+    substr = ''
+    if len(data) &gt; 1 and len(data[0]) &gt; 0:
+        for i in range(len(data[0])):
+            for j in range(len(data[0])-i+1):
+                if j &gt; len(substr) and is_substr(data[0][i:i+j], data):
+                    substr = data[0][i:i+j]
+    return substr
+
+def is_substr(find, data):
+    if len(data) &lt; 1 and len(find) &lt; 1:
+        return False
+    for i in range(len(data)):
+        if find not in data[i]:
+            return False
+    return True
+
+
+print long_substr(['Oh, hello, my friend.',
+                   'I prefer Jelly Belly beans.',
+                   'When hell freezes over!'])
+</code></pre>
+
+<p>No doubt the algorithm could be improved and I've not had a lot of exposure to Python, so maybe it could be more efficient syntactically as well, but it should do the job.</p>
+
+<p><strong>EDIT:</strong> in-lined the second is_substr function as demonstrated by J.F. Sebastian. Usage remains the same. Note: no change to algorithm.</p>
+
+<pre><code>def long_substr(data):
+    substr = ''
+    if len(data) &gt; 1 and len(data[0]) &gt; 0:
+        for i in range(len(data[0])):
+            for j in range(len(data[0])-i+1):
+                if j &gt; len(substr) and all(data[0][i:i+j] in x for x in data):
+                    substr = data[0][i:i+j]
+    return substr
+</code></pre>
+
+<p>Hope this helps,</p>
+
+<p>Jason.</p>

@@ -1,0 +1,18 @@
+<p>There was an <a href="http://bugs.python.org/issue8776" rel="noreferrer">issue on the Python bug tracker</a> about this:</p>
+
+<blockquote>
+  <p>In some situations, the encoding of the command line is incorrect or
+  unknown. sys.argv is decoded with the file system encoding which can
+  be wrong. Eg. see issue #4388 (ok, it's a bug, it should be fixed).</p>
+  
+  <p>As os.environb, it would be useful to have bytes version of sys.argv
+  to have able to decide the encoding used to decode each argument, or
+  to manipulate bytes if we don't care about the encoding.</p>
+</blockquote>
+
+<p>Since on Python 3 <code>sys.argv</code> is encoded with the filesystem encoding, the proposed solution on the bug is to use <a href="https://docs.python.org/3/library/os.html#os.fsencode" rel="noreferrer"><code>os.fsencode</code></a>:</p>
+
+<pre><code>argvb = list(map(os.fsencode, sys.argv))
+</code></pre>
+
+<p><code>os.fsencode</code> encodes the string using the string using the <code>surrogateescape</code> encoding, which is defined in <a href="https://www.python.org/dev/peps/pep-0383" rel="noreferrer">PEP-383</a>.</p>

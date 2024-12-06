@@ -1,0 +1,24 @@
+<p>I rewrote David's answer using the <code>with</code> statement, it allows you do do this:</p>
+
+<pre><code>with timeout(seconds=3):
+    time.sleep(4)
+</code></pre>
+
+<p>Which will raise a TimeoutError.</p>
+
+<p>The code is still using <code>signal</code> and thus UNIX only:</p>
+
+<pre><code>import signal
+
+class timeout:
+    def __init__(self, seconds=1, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+</code></pre>

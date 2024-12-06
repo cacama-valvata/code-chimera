@@ -1,0 +1,18 @@
+<p>The following function incorporates johannes-s answer above. I have tested it with <code>plt.figure</code> and <code>plt.subplots()</code> with multiple axes, and it works nicely.</p>
+
+<pre><code>def save(filepath, fig=None):
+    '''Save the current image with no whitespace
+    Example filepath: "myfig.png" or r"C:\myfig.pdf" 
+    '''
+    import matplotlib.pyplot as plt
+    if not fig:
+        fig = plt.gcf()
+
+    plt.subplots_adjust(0,0,1,1,0,0)
+    for ax in fig.axes:
+        ax.axis('off')
+        ax.margins(0,0)
+        ax.xaxis.set_major_locator(plt.NullLocator())
+        ax.yaxis.set_major_locator(plt.NullLocator())
+    fig.savefig(filepath, pad_inches = 0, bbox_inches='tight')
+</code></pre>

@@ -1,0 +1,101 @@
+<h1>Python 3</h1>
+<h2>A Simple, Customizable Progress Bar</h2>
+<p>Here's an aggregate of many of the answers below that I use regularly (no imports required).</p>
+<p><strong>Note:</strong> All code in this answer was created for Python 3; see end of answer to use this code with Python 2.</p>
+<pre><code># Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = &quot;\r&quot;):
+    &quot;&quot;&quot;
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. &quot;\r&quot;, &quot;\r\n&quot;) (Str)
+    &quot;&quot;&quot;
+    percent = (&quot;{0:.&quot; + str(decimals) + &quot;f}&quot;).format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+</code></pre>
+<h3>Sample Usage</h3>
+<pre><code>import time
+
+# A List of Items
+items = list(range(0, 57))
+l = len(items)
+
+# Initial call to print 0% progress
+printProgressBar(0, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+for i, item in enumerate(items):
+    # Do stuff...
+    time.sleep(0.1)
+    # Update Progress Bar
+    printProgressBar(i + 1, l, prefix = 'Progress:', suffix = 'Complete', length = 50)
+</code></pre>
+<h3>Sample Output</h3>
+<pre class="lang-none prettyprint-override"><code>Progress: |█████████████████████████████████████████████-----| 90.0% Complete
+</code></pre>
+<h3>Update</h3>
+<p>There was discussion in the comments regarding an option that allows the progress bar to adjust dynamically to the terminal window width. While I don't recommend this, here's a <a href="https://gist.github.com/greenstick/b23e475d2bfdc3a82e34eaa1f6781ee4" rel="noreferrer">gist</a> that implements this feature (and notes the caveats).</p>
+<h2>Single-Call Version of The Above</h2>
+<p>A comment below referenced a nice <a href="https://stackoverflow.com/a/34482761/2206251">answer</a> posted in response to a similar question. I liked the ease of use it demonstrated and wrote a similar one, but opted to leave out the import of the <code>sys</code> module while adding in some of the features of the original <code>printProgressBar</code> function above.</p>
+<p>Some benefits of this approach over the original function above include the elimination of an initial call to the function to print the progress bar at 0% and the use of <code>enumerate</code> becoming optional (i.e. it is no longer explicitly required to make the function work).</p>
+<pre><code>def progressBar(iterable, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = &quot;\r&quot;):
+    &quot;&quot;&quot;
+    Call in a loop to create terminal progress bar
+    @params:
+        iterable    - Required  : iterable object (Iterable)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. &quot;\r&quot;, &quot;\r\n&quot;) (Str)
+    &quot;&quot;&quot;
+    total = len(iterable)
+    # Progress Bar Printing Function
+    def printProgressBar (iteration):
+        percent = (&quot;{0:.&quot; + str(decimals) + &quot;f}&quot;).format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Initial Call
+    printProgressBar(0)
+    # Update Progress Bar
+    for i, item in enumerate(iterable):
+        yield item
+        printProgressBar(i + 1)
+    # Print New Line on Complete
+    print()
+</code></pre>
+<h3>Sample Usage</h3>
+<pre><code>import time
+
+# A List of Items
+items = list(range(0, 57))
+
+# A Nicer, Single-Call Usage
+for item in progressBar(items, prefix = 'Progress:', suffix = 'Complete', length = 50):
+    # Do stuff...
+    time.sleep(0.1)
+</code></pre>
+<h3>Sample Output</h3>
+<pre class="lang-none prettyprint-override"><code>Progress: |█████████████████████████████████████████████-----| 90.0% Complete
+</code></pre>
+<h1>Python 2</h1>
+<p>To use the above functions in Python 2, set the encoding to UTF-8 at the top of your script:</p>
+<pre><code># -*- coding: utf-8 -*-
+</code></pre>
+<p>And replace the Python 3 string formatting in this line:</p>
+<pre><code>print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+</code></pre>
+<p>With Python 2 string formatting:</p>
+<pre><code>print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = printEnd)
+</code></pre>

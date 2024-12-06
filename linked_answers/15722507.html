@@ -1,0 +1,28 @@
+<pre><code>In [1]: import numpy as np
+
+In [2]: a = np.array([[00,01], [10,11], [20,21], [30,31], [40,41], [50,51]])
+
+In [3]: w = np.hstack((a[:-2],a[1:-1],a[2:]))
+
+In [4]: w
+Out[4]: 
+array([[ 0,  1, 10, 11, 20, 21],
+       [10, 11, 20, 21, 30, 31],
+       [20, 21, 30, 31, 40, 41],
+       [30, 31, 40, 41, 50, 51]])
+</code></pre>
+
+<p>You could write this in as a function as so:</p>
+
+<pre><code>def window_stack(a, stepsize=1, width=3):
+    n = a.shape[0]
+    return np.hstack( a[i:1+n+i-width:stepsize] for i in range(0,width) )
+</code></pre>
+
+<hr>
+
+<p>This doesn't really depend on the shape of the original array, as long as <code>a.ndim = 2</code>.  Note that I never use either lengths in the interactive version.  The second dimension of the shape is irrelevant; each row can be as long as you want.   Thanks to @Jaime's suggestion, you can do it without checking the shape at all:</p>
+
+<pre><code>def window_stack(a, stepsize=1, width=3):
+    return np.hstack( a[i:1+i-width or None:stepsize] for i in range(0,width) )
+</code></pre>

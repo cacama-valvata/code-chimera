@@ -1,0 +1,71 @@
+<p>You could use <a href="https://docs.python.org/3/library/functools.html#functools.reduce" rel="noreferrer"><code>functools.reduce</code></a>:</p>
+
+<pre><code>import functools
+
+def rsetattr(obj, attr, val):
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+# using wonder's beautiful simplification: https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427
+
+def rgetattr(obj, attr, *args):
+    def _getattr(obj, attr):
+        return getattr(obj, attr, *args)
+    return functools.reduce(_getattr, [obj] + attr.split('.'))
+</code></pre>
+
+<p><code>rgetattr</code> and <code>rsetattr</code> are drop-in replacements for <code>getattr</code> and <code>setattr</code>,
+which can also handle dotted <code>attr</code> strings.</p>
+
+<hr>
+
+<pre><code>import functools
+
+class Person(object):
+    def __init__(self):
+        self.pet = Pet()
+        self.residence = Residence()
+
+class Pet(object):
+    def __init__(self,name='Fido',species='Dog'):
+        self.name = name
+        self.species = species
+
+class Residence(object):
+    def __init__(self,type='House',sqft=None):
+        self.type = type
+        self.sqft=sqft
+
+def rsetattr(obj, attr, val):
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+def rgetattr(obj, attr, *args):
+    def _getattr(obj, attr):
+        return getattr(obj, attr, *args)
+    return functools.reduce(_getattr, [obj] + attr.split('.'))
+</code></pre>
+
+<hr>
+
+<pre><code>if __name__=='__main__':
+    p = Person()
+    print(rgetattr(p, 'pet.favorite.color', 'calico'))
+    # 'calico'
+
+    try:
+        # Without a default argument, `rgetattr`, like `getattr`, raises
+        # AttributeError when the dotted attribute is missing
+        print(rgetattr(p, 'pet.favorite.color'))
+    except AttributeError as err:
+        print(err)
+        # 'Pet' object has no attribute 'favorite'
+
+    rsetattr(p, 'pet.name', 'Sparky')
+    rsetattr(p, 'residence.type', 'Apartment')
+    print(p.__dict__)
+    print(p.pet.name)
+    # Sparky
+    print(p.residence.type)
+    # Apartment
+</code></pre>

@@ -1,0 +1,37 @@
+<p>In Python 3.2+, using the APIs requested by the OP, you can <a href="https://docs.python.org/3/library/os.html#os.makedirs" rel="noreferrer">elegantly</a> do the following:</p>
+<pre class="lang-py prettyprint-override"><code>
+import os
+
+filename = &quot;/foo/bar/baz.txt&quot;
+os.makedirs(os.path.dirname(filename), exist_ok=True)
+with open(filename, &quot;w&quot;) as f:
+    f.write(&quot;FOOBAR&quot;)
+
+</code></pre>
+<hr />
+<p>With the Pathlib module (introduced in Python 3.4), there is an alternate syntax (thanks David258):</p>
+<pre class="lang-py prettyprint-override"><code>from pathlib import Path
+output_file = Path(&quot;/foo/bar/baz.txt&quot;)
+output_file.parent.mkdir(exist_ok=True, parents=True)
+output_file.write_text(&quot;FOOBAR&quot;)
+</code></pre>
+<hr />
+<p>In older python, there is a less elegant way:</p>
+<p>The <a href="http://docs.python.org/library/os.html#os.makedirs" rel="noreferrer"><code>os.makedirs</code></a> function does this. Try the following:</p>
+<pre class="lang-py prettyprint-override"><code>import os
+import errno
+
+filename = &quot;/foo/bar/baz.txt&quot;
+if not os.path.exists(os.path.dirname(filename)):
+    try:
+        os.makedirs(os.path.dirname(filename))
+    except OSError as exc: # Guard against race condition
+        if exc.errno != errno.EEXIST:
+            raise
+
+with open(filename, &quot;w&quot;) as f:
+    f.write(&quot;FOOBAR&quot;)
+
+</code></pre>
+<p>The reason to add the <code>try-except</code> block is to handle the case when the directory was created between the <code>os.path.exists</code> and the <code>os.makedirs</code> calls, so that to protect us from race conditions.</p>
+<hr />

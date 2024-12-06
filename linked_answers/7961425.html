@@ -1,0 +1,20 @@
+<p><strong>In Python 2.7</strong>, the new way of removing duplicates from an iterable while keeping it in the original order is:</p>
+
+<pre><code>&gt;&gt;&gt; from collections import OrderedDict
+&gt;&gt;&gt; list(OrderedDict.fromkeys('abracadabra'))
+['a', 'b', 'r', 'c', 'd']
+</code></pre>
+
+<p><strong>In Python 3.5</strong>, the OrderedDict has a C implementation. My timings show that this is now both the fastest and shortest of the various approaches for Python 3.5.</p>
+
+<p><strong>In Python 3.6</strong>, the regular dict became both ordered and compact.  (This feature is holds for CPython and PyPy but may not present in other implementations).  That gives us a new fastest way of deduping while retaining order:</p>
+
+<pre><code>&gt;&gt;&gt; list(dict.fromkeys('abracadabra'))
+['a', 'b', 'r', 'c', 'd']
+</code></pre>
+
+<p><strong>In Python 3.7</strong>, the regular dict is guaranteed to both ordered across all implementations.  <strong>So, the shortest and fastest solution is:</strong></p>
+
+<pre><code>&gt;&gt;&gt; list(dict.fromkeys('abracadabra'))
+['a', 'b', 'r', 'c', 'd']
+</code></pre>

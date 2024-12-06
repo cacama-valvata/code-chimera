@@ -1,0 +1,15 @@
+<p>Write a generator function that pulls the chunks down and splits them into lines for you. Since you won't know if the last line ended in a newline or not, save it and attach it to the next chunk.</p>
+
+<pre><code>def split_by_lines(text_generator):
+    last_line = ""
+    try:
+        while True:
+             chunk = "".join(last_line, next(text_generator))
+             chunk_by_line = chunk.split('\n')
+             last_line = chunk_by_line.pop()
+             for line in chunk_by_line:
+                 yield line
+    except StopIteration: # the other end of the pipe is empty
+        yield last_line
+        raise StopIteration
+</code></pre>

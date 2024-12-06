@@ -1,0 +1,9 @@
+<p>Permissions might be the problem, but I had the same problem '[Error 5] Access is denied' on a <code>os.rename()</code> and a simple retry-loop was able to rename the file after a few retries.</p>
+
+<pre><code>for retry in range(100):
+    try:
+        os.rename(src_name,dest_name)
+        break
+    except:
+        print "rename failed, retrying..."
+</code></pre>

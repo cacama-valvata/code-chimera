@@ -1,0 +1,15 @@
+<p>It all depends on your site and the level of security that you're trying to achieve but the basic process for a web app goes something like the following:</p>
+
+<ol>
+<li><p>The user navigates to the 'forgot my password' page and enters their username or email (whichever is unique) to request a password reset.</p></li>
+<li><p>Optionally at this stage you can confirm the request by asking for additional information such as the answer to a predefined security question or their date of birth etc. This extra level stops users receiving emails they didn't request.</p></li>
+<li><p>Look up the user's account. Save a temporary password (usually a GUID) and timestamp against the account record. Send an email to the user containing the temporary password.</p></li>
+<li><p>The user either clicks on the link containing the temporary password and the user's identifier in the email or navigates to the 'forgot my password' page and copy &amp; pastes the temporary password and their identifier. The user enters their new password and confirms it.</p></li>
+<li><p>Look up the user's record and if the current time is within a specified time limit (e.g. 1 hour) of the timestamp saved in step 2 then hash and save the new password. (Obviously only if the temporary passwords match!).  Delete the temporary GUID and timestamp.</p></li>
+</ol>
+
+<p>The principal here is that the user is emailed a temporary password that let's them <em>change</em> their password.  The originally stored password (it should be hashed!) is never changed to a temporary password in case the user remembers it.</p>
+
+<p><strong>The original password will never be displayed to the user as it should be hashed and unknown.</strong></p>
+
+<p><strong>Note</strong> this process relies entirely on the security of the user's email account. So it depends on the level of security your wish to achieve.  This is usually enough for most sites/apps.</p>

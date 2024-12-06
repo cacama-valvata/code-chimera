@@ -1,0 +1,15 @@
+<p>So I needed to convert a whole file with bunch of snake case parameters into camel case. The solution by <a href="http://rodic.fr/blog/camelcase-and-snake_case-strings-conversion-with-python/" rel="nofollow noreferrer">Mathieu Rodic</a> worked best. Thanks.</p>
+
+<p>Here is a little script to use it on files.</p>
+
+<pre><code>import re
+
+f = open("in.txt", "r")
+words = f.read()
+
+def to_camel_case3(s):
+    return re.sub(r'_([a-z])', lambda x: x.group(1).upper(), s)
+
+f = open("out.txt", "w")
+f.write(to_camel_case3(words))
+</code></pre>

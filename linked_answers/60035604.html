@@ -1,0 +1,14 @@
+<p>In addition to the <a href="https://stackoverflow.com/a/15538391/44330">Onur's answer</a>, You possibly want to deal with datetime type like below.<br> (in order to handle: 'datetime.datetime' object has no attribute '<strong>dict</strong>' exception.)</p>
+
+<pre><code>def datetime_option(value):
+    if isinstance(value, datetime.date):
+        return value.timestamp()
+    else:
+        return value.__dict__
+</code></pre>
+
+<p>Usage:</p>
+
+<pre><code>def toJSON(self):
+    return json.dumps(self, default=datetime_option, sort_keys=True, indent=4)
+</code></pre>

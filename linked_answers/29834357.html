@@ -1,0 +1,107 @@
+<p>Thanks to the <a href="https://stackoverflow.com/a/24277852/1267255">nice answer</a> by <a href="https://stackoverflow.com/users/9530/adam-rosenfield">Adam</a>, I was able to get this working. His solution didn't quite work for my case, since I needed to capture text, restore, and capture text again many times, so I had to make some pretty big changes. Also, I wanted to get this to work for sys.stderr as well (with the potential for other streams).</p>
+<p>So, here is the solution I ended up using (with or without threading):</p>
+<h3>Code</h3>
+<pre><code>import os
+import sys
+import threading
+import time
+
+
+class OutputGrabber(object):
+    &quot;&quot;&quot;
+    Class used to grab standard output or another stream.
+    &quot;&quot;&quot;
+    escape_char = &quot;\b&quot;
+
+    def __init__(self, stream=None, threaded=False):
+        self.origstream = stream
+        self.threaded = threaded
+        if self.origstream is None:
+            self.origstream = sys.stdout
+        self.origstreamfd = self.origstream.fileno()
+        self.capturedtext = &quot;&quot;
+        # Create a pipe so the stream can be captured:
+        self.pipe_out, self.pipe_in = os.pipe()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
+
+    def start(self):
+        &quot;&quot;&quot;
+        Start capturing the stream data.
+        &quot;&quot;&quot;
+        self.capturedtext = &quot;&quot;
+        # Save a copy of the stream:
+        self.streamfd = os.dup(self.origstreamfd)
+        # Replace the original stream with our write pipe:
+        os.dup2(self.pipe_in, self.origstreamfd)
+        if self.threaded:
+            # Start thread that will read the stream:
+            self.workerThread = threading.Thread(target=self.readOutput)
+            self.workerThread.start()
+            # Make sure that the thread is running and os.read() has executed:
+            time.sleep(0.01)
+
+    def stop(self):
+        &quot;&quot;&quot;
+        Stop capturing the stream data and save the text in `capturedtext`.
+        &quot;&quot;&quot;
+        # Print the escape character to make the readOutput method stop:
+        self.origstream.write(self.escape_char)
+        # Flush the stream to make sure all our data goes in before
+        # the escape character:
+        self.origstream.flush()
+        if self.threaded:
+            # wait until the thread finishes so we are sure that
+            # we have until the last character:
+            self.workerThread.join()
+        else:
+            self.readOutput()
+        # Close the pipe:
+        os.close(self.pipe_in)
+        os.close(self.pipe_out)
+        # Restore the original stream:
+        os.dup2(self.streamfd, self.origstreamfd)
+        # Close the duplicate stream:
+        os.close(self.streamfd)
+
+    def readOutput(self):
+        &quot;&quot;&quot;
+        Read the stream data (one byte at a time)
+        and save the text in `capturedtext`.
+        &quot;&quot;&quot;
+        while True:
+            char = os.read(self.pipe_out,1).decode(self.origstream.encoding)
+            if not char or self.escape_char in char:
+                break
+            self.capturedtext += char
+</code></pre>
+<h3>Usage</h3>
+<p>with sys.stdout, the default:</p>
+<pre><code>out = OutputGrabber()
+out.start()
+library.method(*args) # Call your code here
+out.stop()
+# Compare the output to the expected value:
+# comparisonMethod(out.capturedtext, expectedtext)
+</code></pre>
+<p>with sys.stderr:</p>
+<pre><code>out = OutputGrabber(sys.stderr)
+out.start()
+library.method(*args) # Call your code here
+out.stop()
+# Compare the output to the expected value:
+# comparisonMethod(out.capturedtext, expectedtext)
+</code></pre>
+<p>in a <code>with</code> block:</p>
+<pre><code>out = OutputGrabber()
+with out:
+    library.method(*args) # Call your code here
+# Compare the output to the expected value:
+# comparisonMethod(out.capturedtext, expectedtext)
+</code></pre>
+<p>Tested with Python 3.10. To work in Python 2, change <code>char = os.read(self.pipe_out,1).decode(self.origstream.encoding)</code> to <code>char = os.read(self.pipe_out,1)</code>.</p>

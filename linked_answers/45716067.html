@@ -1,0 +1,16 @@
+<p>It's because your <code>enum</code> is not the standard library <code>enum</code> module. You probably have the package <a href="https://pypi.python.org/pypi/enum34" rel="noreferrer"><code>enum34</code></a> installed. </p>
+
+<p>One way check if this is the case is to inspect the property <code>enum.__file__</code></p>
+
+<pre><code>import enum
+print(enum.__file__)  
+# standard library location should be something like 
+# /usr/local/lib/python3.6/enum.py
+</code></pre>
+
+<p>Since python 3.6 the enum34 library is no longer compatible with the standard library. The library is also unnecessary, so you can simply uninstall it.</p>
+
+<pre><code>pip uninstall -y enum34
+</code></pre>
+
+<p>If you need the code to run on python versions both &lt;=3.4 and >3.4, you can try having <a href="https://pypi.python.org/pypi/enum-compat/0.0.2" rel="noreferrer"><code>enum-compat</code></a> as a requirement. It only installs <code>enum34</code> for older versions of python without the standard library enum.</p>

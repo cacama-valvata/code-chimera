@@ -1,0 +1,10 @@
+<p>Providing <code>DebugUndefined</code> to named parameter undefined in the env, apparently does the trick. The rendered template preserves the <code>{{&lt;undefined variable}}</code>.</p>
+<p>Like here:</p>
+<pre><code>from jinja2 import Environment, BaseLoader, DebugUndefined
+
+rtemplate = Environment(loader=BaseLoader,undefined=DebugUndefined).from_string(&quot;{{ a }} is defined, but {{ b}} is undefined&quot;)
+print(rtemplate.render({&quot;a&quot;:&quot;a&quot;}))
+</code></pre>
+<p>The result is:</p>
+<pre><code>a is defined, but {{ b }} is undefined
+</code></pre>

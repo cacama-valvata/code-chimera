@@ -1,0 +1,43 @@
+<p>Putting hpaulj's answer into actual code, something like this works:</p>
+
+<pre><code>class CustomHelpFormatter(argparse.HelpFormatter):
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        args_string = self._format_args(action, default)
+        return ', '.join(action.option_strings) + ' ' + args_string
+
+fmt = lambda prog: CustomHelpFormatter(prog)
+parser = argparse.ArgumentParser(formatter_class=fmt)
+</code></pre>
+
+<p>To additionally extend the default column size for help variables, add constructor to <code>CustomHelpFormatter</code>:</p>
+
+<pre><code>def __init__(self, prog):
+    super().__init__(prog, max_help_position=40, width=80)
+</code></pre>
+
+<p>Seeing it in action:</p>
+
+<pre><code>usage: bk set [-h] [-p] [-s r] [-f] [-c] [-b c] [-t x y] [-bs s] [-bc c]
+              [--crop x1 y1 x2 y2] [-g u r d l]
+              monitor [path]
+
+positional arguments:
+  monitor                    monitor number
+  path                       input image path
+
+optional arguments:
+  -h, --help                 show this help message and exit
+  -p, --preview              previews the changes without applying them
+  -s, --scale r              scales image by given factor
+  -f, --fit                  fits the image within monitor work area
+  -c, --cover                makes the image cover whole monitor work area
+  -b, --background c         selects background color
+  -t, --translate x y        places the image at given position
+  -bs, --border-size s       selects border width
+  -bc, --border-color c      selects border size
+  --crop x1 y1 x2 y2         selects crop area
+  -g, --gap, --gaps u r d l  keeps "border" around work area
+</code></pre>

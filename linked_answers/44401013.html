@@ -1,0 +1,43 @@
+<p>Do you try to remove the pip package from the sys.modules array?</p>
+
+<pre class="lang-py prettyprint-override"><code>import pip
+import sys
+import site
+
+print ('PIP Version: ' + pip.__version__)
+
+pip.main(["install", "--upgrade", "pip"])
+
+user_path  = site.getusersitepackages()
+sytem_path = site.getsitepackages()
+
+sys.path = [user_path] + system_path + sys.path
+
+pips = [module for module in sys.modules if module.startswith('pip')]
+for pip_module in pips:
+    sys.modules.pop(pip_module)
+
+del pip
+
+import pip
+print ('PIP Version: ' + pip.__version__)
+</code></pre>
+
+<p>Runinng on my machine with pip 8.1.1 installed, the output I get was:</p>
+
+<pre><code> begnini@coffee-machine:~# python update.py
+ PIP Version: 8.1.1
+ Collecting pip
+  Downloading pip-9.0.1-py2.py3-none-any.whl (1.3MB)
+    100% |████████████████████████████████| 1.3MB 651kB/s
+ Installing collected packages: pip
+  Found existing installation: pip 8.1.1
+    Uninstalling pip-8.1.1:
+      Successfully uninstalled pip-8.1.1
+ Successfully installed pip-9.0.1
+ PIP Version: 9.0.1
+</code></pre>
+
+<p>EDIT: Like we discussed, the problem was with pip trying to search first in the main python lib directory instead /usr/local/lib dir. To fix this, I added the local lib dir in the first position of the system path array. With this modification, the bug should be fixed.</p>
+
+<p>EDIT 2: Added site paths instead use hardcoded dirs.</p>

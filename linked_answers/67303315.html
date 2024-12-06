@@ -1,0 +1,12 @@
+<p>Thanks for the accepted answer above. It was helpful.
+In case anyone wants to extend the use for <code>hasattr</code> use the code below:</p>
+<pre class="lang-py prettyprint-override"><code>def rhasattr(obj, attr):
+    _nested_attrs = attr.split(&quot;.&quot;)
+    _curr_obj = obj
+    for _a in _nested_attrs[:-1]:
+        if hasattr(_curr_obj, _a):
+            _curr_obj = getattr(_curr_obj, _a)
+        else:
+            return False
+    return hasattr(_curr_obj, _nested_attrs[-1])
+</code></pre>

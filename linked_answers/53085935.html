@@ -1,0 +1,114 @@
+<p>The way dataclasses combines attributes prevents you from being able to use attributes with defaults in a base class and then use attributes without a default (positional attributes) in a subclass.</p>
+<p>That's because the attributes are combined by starting from the bottom of the MRO, and building up an ordered list of the attributes in first-seen order; overrides are kept in their original location. So <code>Parent</code> starts out with <code>['name', 'age', 'ugly']</code>, where <code>ugly</code> has a default, and then <code>Child</code> adds <code>['school']</code> to the end of that list (with <code>ugly</code> already in the list). This means you end up with <code>['name', 'age', 'ugly', 'school']</code> and because <code>school</code> doesn't have a default, this results in an invalid argument listing for <code>__init__</code>.</p>
+<p>This is documented in <a href="https://www.python.org/dev/peps/pep-0557/" rel="noreferrer">PEP-557 <em>Dataclasses</em></a>, under <a href="https://www.python.org/dev/peps/pep-0557/#inheritance" rel="noreferrer"><em>inheritance</em></a>:</p>
+<blockquote>
+<p>When the Data Class is being created by the <code>@dataclass</code> decorator, it looks through all of the class's base classes in reverse MRO (that is, starting at <code>object</code>) and, for each Data Class that it finds, adds the fields from that base class to an ordered mapping of fields. After all of the base class fields are added, it adds its own fields to the ordered mapping. All of the generated methods will use this combined, calculated ordered mapping of fields. Because the fields are in insertion order, derived classes override base classes.</p>
+</blockquote>
+<p>and under <a href="https://www.python.org/dev/peps/pep-0557/#id7" rel="noreferrer"><em>Specification</em></a>:</p>
+<blockquote>
+<p><code>TypeError</code> will be raised if a field without a default value follows a field with a default value. This is true either when this occurs in a single class, or as a result of class inheritance.</p>
+</blockquote>
+<p>You do have a few options here to avoid this issue.</p>
+<p>The first option is to use separate base classes to force fields with defaults into a later position in the MRO order. At all cost, avoid setting fields directly on classes that are to be used as base classes, such as <code>Parent</code>.</p>
+<p>The following class hierarchy works:</p>
+<pre><code># base classes with fields; fields without defaults separate from fields with.
+@dataclass
+class _ParentBase:
+    name: str
+    age: int
+    
+@dataclass
+class _ParentDefaultsBase:
+    ugly: bool = False
+
+@dataclass
+class _ChildBase(_ParentBase):
+    school: str
+
+@dataclass
+class _ChildDefaultsBase(_ParentDefaultsBase):
+    ugly: bool = True
+
+# public classes, deriving from base-with, base-without field classes
+# subclasses of public classes should put the public base class up front.
+
+@dataclass
+class Parent(_ParentDefaultsBase, _ParentBase):
+    def print_name(self):
+        print(self.name)
+
+    def print_age(self):
+        print(self.age)
+
+    def print_id(self):
+        print(f&quot;The Name is {self.name} and {self.name} is {self.age} year old&quot;)
+
+@dataclass
+class Child(_ChildDefaultsBase, Parent, _ChildBase):
+    pass
+</code></pre>
+<p>By pulling out fields into <em>separate</em> base classes with fields without defaults and fields with defaults, and a carefully selected inheritance order, you can produce an MRO that puts all fields without defaults before those with defaults. The reversed MRO (ignoring <code>object</code>) for <code>Child</code> is:</p>
+<pre><code>_ParentBase
+_ChildBase
+_ParentDefaultsBase
+Parent
+_ChildDefaultsBase
+</code></pre>
+<p>Note that while <code>Parent</code> doesn't set any new fields, it does inherit the fields from <code>_ParentDefaultsBase</code> and should <em>not</em> end up 'last' in the field listing order; the above order puts <code>_ChildDefaultsBase</code> last so its fields 'win'. The dataclass rules are also satisfied; the classes with fields without defaults (<code>_ParentBase</code> and <code>_ChildBase</code>) precede the classes with fields with defaults (<code>_ParentDefaultsBase</code> and <code>_ChildDefaultsBase</code>).</p>
+<p>The result is <code>Parent</code> and <code>Child</code> classes with a sane field older, while <code>Child</code> is still a subclass of <code>Parent</code>:</p>
+<pre><code>&gt;&gt;&gt; from inspect import signature
+&gt;&gt;&gt; signature(Parent)
+&lt;Signature (name: str, age: int, ugly: bool = False) -&gt; None&gt;
+&gt;&gt;&gt; signature(Child)
+&lt;Signature (name: str, age: int, school: str, ugly: bool = True) -&gt; None&gt;
+&gt;&gt;&gt; issubclass(Child, Parent)
+True
+</code></pre>
+<p>and so you can create instances of both classes:</p>
+<pre><code>&gt;&gt;&gt; jack = Parent('jack snr', 32, ugly=True)
+&gt;&gt;&gt; jack_son = Child('jack jnr', 12, school='havard', ugly=True)
+&gt;&gt;&gt; jack
+Parent(name='jack snr', age=32, ugly=True)
+&gt;&gt;&gt; jack_son
+Child(name='jack jnr', age=12, school='havard', ugly=True)
+</code></pre>
+<p>Another option is to only use fields with defaults; you can still make in an error to not supply a <code>school</code> value, by raising one in <code>__post_init__</code>:</p>
+<pre><code>_no_default = object()
+
+@dataclass
+class Child(Parent):
+    school: str = _no_default
+    ugly: bool = True
+
+    def __post_init__(self):
+        if self.school is _no_default:
+            raise TypeError(&quot;__init__ missing 1 required argument: 'school'&quot;)
+</code></pre>
+<p>but this <em>does</em> alter the field order; <code>school</code> ends up after <code>ugly</code>:</p>
+<pre><code>&lt;Signature (name: str, age: int, ugly: bool = True, school: str = &lt;object object at 0x1101d1210&gt;) -&gt; None&gt;
+</code></pre>
+<p>and a type hint checker <em>will</em> complain about <code>_no_default</code> not being a string.</p>
+<p>You can also use the <a href="http://www.attrs.org/en/stable/" rel="noreferrer"><code>attrs</code> project</a>, which was the project that inspired <code>dataclasses</code>. It uses a different inheritance merging strategy; it pulls overridden fields in a subclass to the end of the fields list, so <code>['name', 'age', 'ugly']</code> in the <code>Parent</code> class becomes <code>['name', 'age', 'school', 'ugly']</code> in the <code>Child</code> class; by overriding the field with a default, <code>attrs</code> allows the override without needing to do a MRO dance.</p>
+<p><code>attrs</code> supports defining fields without type hints, but lets stick to the <a href="http://www.attrs.org/en/stable/types.html" rel="noreferrer">supported type hinting mode</a> by setting <code>auto_attribs=True</code>:</p>
+<pre><code>import attr
+
+@attr.s(auto_attribs=True)
+class Parent:
+    name: str
+    age: int
+    ugly: bool = False
+
+    def print_name(self):
+        print(self.name)
+
+    def print_age(self):
+        print(self.age)
+
+    def print_id(self):
+        print(f&quot;The Name is {self.name} and {self.name} is {self.age} year old&quot;)
+
+@attr.s(auto_attribs=True)
+class Child(Parent):
+    school: str
+    ugly: bool = True
+</code></pre>

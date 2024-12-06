@@ -1,0 +1,34 @@
+<p>You can use <a href="http://docs.python.org/library/traceback.html#traceback.print_exc" rel="noreferrer">traceback.print_exc</a> to print the exceptions traceback. Then use <a href="http://docs.python.org/library/sys#sys.exc_info" rel="noreferrer">sys.exc_info</a> to extract the traceback and finally call <a href="http://docs.python.org/library/pdb#pdb.post_mortem" rel="noreferrer">pdb.post_mortem</a> with that traceback</p>
+<pre><code>import pdb, traceback, sys
+
+def bombs():
+    a = []
+    print a[0]
+
+if __name__ == '__main__':
+    try:
+        bombs()
+    except:
+        extype, value, tb = sys.exc_info()
+        traceback.print_exc()
+        pdb.post_mortem(tb)
+</code></pre>
+<p>If you want to start an interactive command line with <a href="http://docs.python.org/library/code#code.interact" rel="noreferrer">code.interact</a> using the locals of the frame where the exception originated you can do</p>
+<pre><code>import traceback, sys, code
+
+def bombs():
+    a = []
+    print a[0]
+
+if __name__ == '__main__':
+    try:
+        bombs()
+    except:
+        type, value, tb = sys.exc_info()
+        traceback.print_exc()
+        last_frame = lambda tb=tb: last_frame(tb.tb_next) if tb.tb_next else tb
+        frame = last_frame().tb_frame
+        ns = dict(frame.f_globals)
+        ns.update(frame.f_locals)
+        code.interact(local=ns)
+</code></pre>

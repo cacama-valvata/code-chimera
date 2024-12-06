@@ -1,0 +1,28 @@
+<p>My solution for the question:</p>
+
+<p>Define a <code>MemoryHandler</code> to handle all the events prior to the definition of the <code>FileHandler</code>.<br>
+When the <code>FileHandler</code> is defined, set it as the flush target of the <code>MemoryHandler</code> and flush it.  </p>
+
+<pre><code>import logging
+import logging.handlers
+#create a logger object:
+logger = logging.getLogger("MyLogger")
+#define a memory handler:
+memHandler = logging.handlers.MemoryHandler(capacity = 1024*10)
+logger.addHandler(memHandler)
+#...
+#initialization code with several logging events (for example, loading a configuration file to a 'conf' object)
+#everything is logged by the memory handler
+#...
+
+#after configuration is loaded, a new logging handler is defined for a log file:
+fileHandler = logging.FileHandler(conf.get("main","log_file"),'w')
+#flush the memory handler into the new file handler:
+memHandler.setTarget(fileHandler)
+memHandler.flush()
+memHandler.close()
+logger.removeHandler(memHandler)
+logger.addHandler(fileHandler)
+</code></pre>
+
+<p>This works for me, so I'm accepting this as the correct answer, until a more elegant answer comes along.</p>

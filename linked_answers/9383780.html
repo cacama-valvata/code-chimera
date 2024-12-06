@@ -1,0 +1,12 @@
+<p>The safest way to clear a layout is to extract the items with its <a href="https://doc.qt.io/qt-4.8/qlayout.html#takeAt" rel="noreferrer">takeAt</a> method, and then explicitly delete any widgets with <a href="https://doc.qt.io/qt-4.8/qobject.html#deleteLater" rel="noreferrer">deleteLater</a>:</p>
+
+<pre><code>def clearLayout(self, layout):
+    if layout is not None:
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                self.clearLayout(item.layout())
+</code></pre>

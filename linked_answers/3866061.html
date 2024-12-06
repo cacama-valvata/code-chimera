@@ -1,0 +1,10 @@
+<p>If it's of use to anyone, use:</p>
+
+<pre><code>\makeatletter
+\renewcommand*{\thetable}{\arabic{table}}
+\renewcommand*{\thefigure}{\arabic{figure}}
+\let\c@table\c@figure
+\makeatother 
+</code></pre>
+
+<p>In the preamble of your document.</p>

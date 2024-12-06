@@ -1,0 +1,42 @@
+<p>These answers all collect shallow size information. I suspect that visitors to this question will end up here looking to answer the question, "How big is this complex object in memory?"</p>
+
+<p>There's a great answer here: <a href="https://goshippo.com/blog/measure-real-size-any-python-object/" rel="noreferrer">https://goshippo.com/blog/measure-real-size-any-python-object/</a></p>
+
+<p>The punchline:</p>
+
+<pre class="lang-python prettyprint-override"><code>import sys
+
+def get_size(obj, seen=None):
+    """Recursively finds size of objects"""
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, '__dict__'):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])
+    return size
+</code></pre>
+
+<p>Used like so:</p>
+
+<pre><code>In [1]: get_size(1)
+Out[1]: 24
+
+In [2]: get_size([1])
+Out[2]: 104
+
+In [3]: get_size([[1]])
+Out[3]: 184
+</code></pre>
+
+<p>If you want to know Python's memory model more deeply, there's a great article here that has a similar "total size" snippet of code as part of a longer explanation: <a href="https://code.tutsplus.com/tutorials/understand-how-much-memory-your-python-objects-use--cms-25609" rel="noreferrer">https://code.tutsplus.com/tutorials/understand-how-much-memory-your-python-objects-use--cms-25609</a></p>

@@ -1,0 +1,30 @@
+<p>I've had nice results in reading huge files (e.g: ~750 MB igraph object - a binary pickle file) using cPickle itself. This was achieved by simply wrapping up the pickle load call as mentioned <a href="https://stackoverflow.com/a/9270029/2385420">here</a></p>
+
+<p>Example snippet in your case would be something like:</p>
+
+<pre><code>import timeit
+import cPickle as pickle
+import gc
+
+
+def load_cpickle_gc():
+    output = open('myfile3.pkl', 'rb')
+
+    # disable garbage collector
+    gc.disable()
+
+    mydict = pickle.load(output)
+
+    # enable garbage collector again
+    gc.enable()
+    output.close()
+
+
+if __name__ == '__main__':
+    print "cPickle load (with gc workaround): "
+    t = timeit.Timer(stmt="pickle_wr.load_cpickle_gc()", setup="import pickle_wr")
+    print t.timeit(1),'\n'
+</code></pre>
+
+<p>Surely, there might be more apt ways to get the task done, however, this workaround does reduce the time required drastically.
+(For me, it reduced from 843.04s to 41.28s, around 20x)</p>

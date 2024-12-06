@@ -1,0 +1,52 @@
+<h1>The deprecated low_memory option</h1>
+<p>The <code>low_memory</code> option is not properly deprecated, but it should be, since it does not actually do anything differently[<a href="https://github.com/pydata/pandas/issues/5888" rel="noreferrer">source</a>]</p>
+<p>The reason you get this <code>low_memory</code> warning is because guessing dtypes for each column is very memory demanding. Pandas tries to determine what dtype to set by analyzing the data in each column.</p>
+<h1>Dtype Guessing (very bad)</h1>
+<p>Pandas can only determine what dtype a column should have once the whole file is read. This means nothing can really be parsed before the whole file is read unless you risk having to change the dtype of that column when you read the last value.</p>
+<p>Consider the example of one file which has a column called user_id.
+It contains 10 million rows where the user_id is always numbers.
+Since pandas cannot know it is only numbers, it will probably keep it as the original strings until it has read the whole file.</p>
+<h1>Specifying dtypes (should always be done)</h1>
+<p>adding</p>
+<pre><code>dtype={'user_id': int}
+</code></pre>
+<p>to the <a href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.read_csv.html" rel="noreferrer"><code>pd.read_csv()</code></a> call will make pandas know when it starts reading the file, that this is only integers.</p>
+<p>Also worth noting is that if the last line in the file would have <code>&quot;foobar&quot;</code> written in the <code>user_id</code> column, the loading would crash if the above dtype was specified.</p>
+<h3>Example of broken data that breaks when dtypes are defined</h3>
+<pre><code>import pandas as pd
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+
+csvdata = &quot;&quot;&quot;user_id,username
+1,Alice
+3,Bob
+foobar,Caesar&quot;&quot;&quot;
+sio = StringIO(csvdata)
+pd.read_csv(sio, dtype={&quot;user_id&quot;: int, &quot;username&quot;: &quot;string&quot;})
+
+ValueError: invalid literal for long() with base 10: 'foobar'
+</code></pre>
+<p>dtypes are typically a numpy thing, read more about them here:
+<a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.html" rel="noreferrer">http://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.html</a></p>
+<h1>What dtypes exists?</h1>
+<p>We have access to numpy dtypes: float, int, bool, timedelta64[ns] and datetime64[ns]. Note that the numpy date/time dtypes are <em>not</em> time zone aware.</p>
+<p>Pandas extends this set of dtypes with its own:</p>
+<p><code>'datetime64[ns, &lt;tz&gt;]'</code> Which is a time zone aware timestamp.</p>
+<p>'category' which is essentially an enum (strings represented by integer keys to save</p>
+<p>'period[]' Not to be confused with a timedelta, these objects are actually anchored to specific time periods</p>
+<p>'Sparse', 'Sparse[int]', 'Sparse[float]' is for sparse data or 'Data that has a lot of holes in it' Instead of saving the NaN or None in the dataframe it omits the objects, saving space.</p>
+<p>'Interval' is a topic of its own but its main use is for indexing. <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/advanced.html#advanced-intervalindex" rel="noreferrer">See more here</a></p>
+<p>'Int8', 'Int16', 'Int32', 'Int64', 'UInt8', 'UInt16', 'UInt32', 'UInt64' are all pandas specific integers that are nullable, unlike the numpy variant.</p>
+<p>'string' is a specific dtype for working with string data and gives access to the <code>.str</code> attribute on the series.</p>
+<p>'boolean' is like the numpy 'bool' but it also supports missing data.</p>
+<p>Read the complete reference here:</p>
+<p><a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.dtypes.html" rel="noreferrer">Pandas dtype reference</a></p>
+<h1>Gotchas, caveats, notes</h1>
+<p>Setting <code>dtype=object</code> will silence the above warning, but will not make it more memory efficient, only process efficient if anything.</p>
+<p>Setting <code>dtype=unicode</code> will not do anything, since to numpy, a <code>unicode</code> is represented as <code>object</code>.</p>
+<h3>Usage of converters</h3>
+<p>@sparrow correctly points out the usage of converters to avoid pandas blowing up when encountering <code>'foobar'</code> in a column specified as <code>int</code>. I would like to add that converters are really heavy and inefficient to use in pandas and should be used as a last resort. This is because the read_csv process is a single process.</p>
+<p>CSV files can be processed line by line and thus can be processed by multiple converters in parallel more efficiently by simply cutting the file into segments and running multiple processes, something that pandas does not support. But this is a different story.</p>

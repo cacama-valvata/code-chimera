@@ -1,0 +1,23 @@
+<p>Riffing off of <a href="https://stackoverflow.com/a/46689485/5049813">this answer</a> (thank you!), if you also use <code>tqdm.write</code>, this code should work to suppress those as well:</p>
+<pre class="lang-py prettyprint-override"><code>MODULE_TQDM = &quot;tested_code_module.tqdm&quot;
+
+class NoTQDM:
+    def __init__(self, iterable, *args, **kwargs):
+        self.iterable = iterable
+
+    def __iter__(self):
+        for item in self.iterable:
+            yield item
+
+    def write(self, *args, **kwargs):
+        pass
+</code></pre>
+<p>And then in the test:</p>
+<pre class="lang-py prettyprint-override"><code>from unittest import mock
+
+...
+
+    @mock.patch(MODULE_TQDM, NoTQDM)
+    def test_method(self):
+    ...
+</code></pre>

@@ -1,0 +1,20 @@
+<p>Tested with Python 2.7 and 3.5, the following code should work as intended.</p>
+<pre><code>#!/usr/bin/env python
+# CommentedTreeBuilder.py
+from xml.etree import ElementTree
+
+class CommentedTreeBuilder(ElementTree.TreeBuilder):
+    def comment(self, data):
+        self.start(ElementTree.Comment, {})
+        self.data(data)
+        self.end(ElementTree.Comment)
+</code></pre>
+<p>Then, in the main code use</p>
+<pre><code>parser = ElementTree.XMLParser(target=CommentedTreeBuilder())
+</code></pre>
+<p>as the parser instead of the current one.</p>
+<p>By the way, comments work correctly out of the box with <code>lxml</code>. That is, you can just do</p>
+<pre><code>import lxml.etree as ET
+tree = ET.parse(filename)
+</code></pre>
+<p>without needing any of the above.</p>

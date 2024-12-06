@@ -6,7 +6,7 @@ import re
 samples_dir = pathlib.Path("samples")
 answers_dir = pathlib.Path("linked_answers")
 
-answer_link_re = re.compile(r"stackoverflow\.com/a/(\d+)/")
+answer_link_re = re.compile(r"stackoverflow\.com/a/(\d+)")
 
 API_ENDPOINT = "https://api.stackexchange.com/2.3"
 
@@ -21,7 +21,13 @@ if __name__ == "__main__":
         with open(samples_dir / filename) as sample_file:
             sample = sample_file.read()
 
-        answer_ids |= set(map(lambda match: match.group(1), answer_link_re.finditer(sample)))
+        answers_from_file = set(map(lambda match: match.group(1), answer_link_re.finditer(sample)))
+
+        for answer_id in list(answers_from_file):
+            if (answers_dir / f"{answer_id}.md").exists():
+                answers_from_file.remove(answer_id)
+
+        answer_ids |= answers_from_file
 
     # split ids into 100-id chunks, to batch into requests
     answer_id_list = list(answer_ids)

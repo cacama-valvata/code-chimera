@@ -1,0 +1,31 @@
+<pre><code>import urllib
+import mimetypes
+
+
+def guess_type_of(link, strict=True):
+    link_type, _ = mimetypes.guess_type(link)
+    if link_type is None and strict:
+        u = urllib.urlopen(link)
+        link_type = u.headers.gettype() # or using: u.info().gettype()
+    return link_type
+</code></pre>
+
+<p>Demo:</p>
+
+<pre><code>links = ['http://stackoverflow.com/q/21515098/538284', # It's a html page
+         'http://upload.wikimedia.org/wikipedia/meta/6/6d/Wikipedia_wordmark_1x.png', # It's a png file
+         'http://commons.wikimedia.org/wiki/File:Typing_example.ogv', # It's a html page
+         'http://upload.wikimedia.org/wikipedia/commons/e/e6/Typing_example.ogv'   # It's an ogv file
+]
+
+for link in links:
+    print(guess_type_of(link))
+</code></pre>
+
+<p>Output:</p>
+
+<pre><code>text/html
+image/x-png
+text/html
+application/ogg
+</code></pre>

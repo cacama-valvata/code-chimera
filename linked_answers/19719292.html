@@ -1,0 +1,130 @@
+<p><strong>Update as of 19-02-2023</strong></p>
+<p>The update to the below script is now alive as a Python package by the same author. You can install it from PyPi, which lives at <a href="https://pypi.org/project/pyuac/" rel="noreferrer">https://pypi.org/project/pyuac/</a>, and the source code/home page is located at <a href="https://github.com/Preston-Landers/pyuac" rel="noreferrer">https://github.com/Preston-Landers/pyuac</a>. Install it using:</p>
+<pre><code>pip install pyuac
+pip install pypiwin32
+</code></pre>
+<p>Direct usage of the package is:</p>
+<pre class="lang-py prettyprint-override"><code>import pyuac
+
+def main():
+    print(&quot;Do stuff here that requires being run as an admin.&quot;)
+    # The window will disappear as soon as the program exits!
+    input(&quot;Press enter to close the window. &gt;&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    if not pyuac.isUserAdmin():
+        print(&quot;Re-launching as admin!&quot;)
+        pyuac.runAsAdmin()
+    else:        
+        main()  # Already an admin here.
+</code></pre>
+<p>Or, if you wish to use the decorator:</p>
+<pre class="lang-py prettyprint-override"><code>from pyuac import main_requires_admin
+
+@main_requires_admin
+def main():
+    print(&quot;Do stuff here that requires being run as an admin.&quot;)
+    # The window will disappear as soon as the program exits!
+    input(&quot;Press enter to close the window. &gt;&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<p><strong>Original answer</strong></p>
+<p>Thank you all for your reply. I got my script working with the module/script written by Preston Landers in 2010. After two days of browsing the internet, I could find the script. It was deeply hidden in the pywin32 mailing list. With this script, it is easier to check if the user is an admin, and if not, ask for UAC/admin privileges. It provides output in separate windows to display what the code is doing. An example of how to use the code is also included in the script. For the benefit of everyone who's looking for UAC on Windows, take a look at this code. It can be used something like this from your main script:-</p>
+<pre class="lang-py prettyprint-override"><code>import admin
+
+if not admin.isUserAdmin():
+    admin.runAsAdmin()
+</code></pre>
+<p>The actual code (in the module) is:-</p>
+<pre class="lang-py prettyprint-override"><code>#!/usr/bin/env python
+# -*- coding: utf-8; mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vim: fileencoding=utf-8 tabstop=4 expandtab shiftwidth=4
+
+# (C) COPYRIGHT © Preston Landers 2010
+# Released under the same license as Python 2.6.5
+
+ 
+import sys, os, traceback, types
+ 
+def isUserAdmin():
+   
+    if os.name == 'nt':
+        import ctypes
+        # WARNING: requires Windows XP SP2 or higher!
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            traceback.print_exc()
+            print &quot;Admin check failed, assuming not an admin.&quot;
+            return False
+    elif os.name == 'posix':
+        # Check for root on Posix
+        return os.getuid() == 0
+    else:
+        raise RuntimeError, &quot;Unsupported operating system for this module: %s&quot; % (os.name,)
+   
+def runAsAdmin(cmdLine=None, wait=True):
+ 
+    if os.name != 'nt':
+        raise RuntimeError, &quot;This function is only implemented on Windows.&quot;
+   
+    import win32api, win32con, win32event, win32process
+    from win32com.shell.shell import ShellExecuteEx
+    from win32com.shell import shellcon
+   
+    python_exe = sys.executable
+ 
+    if cmdLine is None:
+        cmdLine = [python_exe] + sys.argv
+    elif type(cmdLine) not in (types.TupleType,types.ListType):
+        raise ValueError, &quot;cmdLine is not a sequence.&quot;
+    cmd = '&quot;%s&quot;' % (cmdLine[0],)
+    # XXX TODO: isn't there a function or something we can call to massage command line params?
+    params = &quot; &quot;.join(['&quot;%s&quot;' % (x,) for x in cmdLine[1:]])
+    cmdDir = ''
+    showCmd = win32con.SW_SHOWNORMAL
+    #showCmd = win32con.SW_HIDE
+    lpVerb = 'runas'  # causes UAC elevation prompt.
+   
+    # print &quot;Running&quot;, cmd, params
+ 
+    # ShellExecute() doesn't seem to allow us to fetch the PID or handle
+    # of the process, so we can't get anything useful from it. Therefore
+    # the more complex ShellExecuteEx() must be used.
+ 
+    # procHandle = win32api.ShellExecute(0, lpVerb, cmd, params, cmdDir, showCmd)
+ 
+    procInfo = ShellExecuteEx(nShow=showCmd,
+                              fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
+                              lpVerb=lpVerb,
+                              lpFile=cmd,
+                              lpParameters=params)
+ 
+    if wait:
+        procHandle = procInfo['hProcess']    
+        obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
+        rc = win32process.GetExitCodeProcess(procHandle)
+        #print &quot;Process handle %s returned code %s&quot; % (procHandle, rc)
+    else:
+        rc = None
+ 
+    return rc
+ 
+def test():
+    rc = 0
+    if not isUserAdmin():
+        print &quot;You're not an admin.&quot;, os.getpid(), &quot;params: &quot;, sys.argv
+        #rc = runAsAdmin([&quot;c:\\Windows\\notepad.exe&quot;])
+        rc = runAsAdmin()
+    else:
+        print &quot;You are an admin!&quot;, os.getpid(), &quot;params: &quot;, sys.argv
+        rc = 0
+    x = raw_input('Press Enter to exit.')
+    return rc
+ 
+ 
+if __name__ == &quot;__main__&quot;:
+    sys.exit(test())
+</code></pre>

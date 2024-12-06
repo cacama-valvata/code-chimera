@@ -1,0 +1,35 @@
+<p>Use <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.item.html" rel="noreferrer"><code>val.item()</code></a> to convert most NumPy values to a native Python type:</p>
+<pre><code>import numpy as np
+
+# for example, numpy.float32 -&gt; python float
+val = np.float32(0)
+pyval = val.item()
+print(type(pyval))         # &lt;class 'float'&gt;
+
+# and similar...
+type(np.float64(0).item()) # &lt;class 'float'&gt;
+type(np.uint32(0).item())  # &lt;class 'int'&gt;
+type(np.int16(0).item())   # &lt;class 'int'&gt;
+type(np.cfloat(0).item())  # &lt;class 'complex'&gt;
+type(np.datetime64(0, 'D').item())  # &lt;class 'datetime.date'&gt;
+type(np.datetime64('2001-01-01 00:00:00').item())  # &lt;class 'datetime.datetime'&gt;
+type(np.timedelta64(0, 'D').item()) # &lt;class 'datetime.timedelta'&gt;
+...
+</code></pre>
+<p>(A related method <a href="https://numpy.org/doc/1.16/reference/generated/numpy.asscalar.html" rel="noreferrer"><code>np.asscalar(val)</code></a> was deprecated with 1.16, and removed with 1.23).</p>
+<hr />
+<p>For the curious, to build a table of conversions of <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html" rel="noreferrer">NumPy array scalars</a> for your system:</p>
+<pre><code>for name in dir(np):
+    obj = getattr(np, name)
+    if hasattr(obj, 'dtype'):
+        try:
+            if 'time' in name:
+                npn = obj(0, 'D')
+            else:
+                npn = obj(0)
+            nat = npn.item()
+            print('{0} ({1!r}) -&gt; {2}'.format(name, npn.dtype.char, type(nat)))
+        except:
+            pass
+</code></pre>
+<p>There are a few NumPy types that have no native Python equivalent on some systems, including: <code>clongdouble</code>, <code>clongfloat</code>, <code>complex192</code>, <code>complex256</code>, <code>float128</code>, <code>longcomplex</code>, <code>longdouble</code> and <code>longfloat</code>. These need to be converted to their nearest NumPy equivalent before using <code>.item()</code>.</p>

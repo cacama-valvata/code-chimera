@@ -1,0 +1,29 @@
+<p>Here's a generator that yields evenly-sized chunks:</p>
+<pre><code>def chunks(lst, n):
+    &quot;&quot;&quot;Yield successive n-sized chunks from lst.&quot;&quot;&quot;
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+</code></pre>
+<pre><code>import pprint
+pprint.pprint(list(chunks(range(10, 75), 10)))
+[[10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+ [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+ [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
+ [40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+ [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
+ [60, 61, 62, 63, 64, 65, 66, 67, 68, 69],
+ [70, 71, 72, 73, 74]]
+</code></pre>
+<p>For Python 2, using <code>xrange</code> instead of <code>range</code>:</p>
+<pre><code>def chunks(lst, n):
+    &quot;&quot;&quot;Yield successive n-sized chunks from lst.&quot;&quot;&quot;
+    for i in xrange(0, len(lst), n):
+        yield lst[i:i + n]
+</code></pre>
+<hr />
+<p>Below is a list comprehension one-liner. The method above is preferable, though, since using named functions makes code easier to understand. For Python 3:</p>
+<pre><code>[lst[i:i + n] for i in range(0, len(lst), n)]
+</code></pre>
+<p>For Python 2:</p>
+<pre><code>[lst[i:i + n] for i in xrange(0, len(lst), n)]
+</code></pre>

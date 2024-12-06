@@ -1,0 +1,99 @@
+<p>Here you go. It would have been nice if you had a clearer example, with fewer rows and more cases of <code>count != 1</code>, as well as the expected solution as code rather than screenshot so the responder can test their solution (using <code>test_df.equals(solution_df)</code>). See below for a suggestion for how to create this.</p>
+<p>I also think you could have phrased your question better: You said</p>
+<blockquote>
+<p>on grouping row_nr and middle_name the highest count observation to be given as output per a group</p>
+</blockquote>
+<p>but your suggested solution implies that you want to group on row_nr and select the rows containing the highest count. &quot;grouping row_nr and middle_name&quot; is what I believe set @Will on his track.</p>
+<pre class="lang-py prettyprint-override"><code>import polars as pl
+
+pl.Config.set_tbl_rows(100) # set max print row-number high enough
+
+tmp = pl.DataFrame(
+    [
+        {&quot;row_nr&quot;: 0, &quot;middle_name_or_initial&quot;: &quot;R.&quot;, &quot;count&quot;: 8},
+        {&quot;row_nr&quot;: 0, &quot;middle_name_or_initial&quot;: &quot;B.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 1, &quot;middle_name_or_initial&quot;: &quot;D.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 1, &quot;middle_name_or_initial&quot;: &quot;J.&quot;, &quot;count&quot;: 11},
+        {&quot;row_nr&quot;: 2, &quot;middle_name_or_initial&quot;: &quot;Micha&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 2, &quot;middle_name_or_initial&quot;: &quot;M.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 2, &quot;middle_name_or_initial&quot;: &quot;J.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 3, &quot;middle_name_or_initial&quot;: &quot;E.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 3, &quot;middle_name_or_initial&quot;: &quot;S.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 4, &quot;middle_name_or_initial&quot;: &quot;M.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 4, &quot;middle_name_or_initial&quot;: &quot;P.&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 5, &quot;middle_name_or_initial&quot;: &quot;Christopher&quot;, &quot;count&quot;: 15},
+        {&quot;row_nr&quot;: 5, &quot;middle_name_or_initial&quot;: &quot;Robert&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 6, &quot;middle_name_or_initial&quot;: &quot;Lusi&quot;, &quot;count&quot;: 1},
+        {&quot;row_nr&quot;: 6, &quot;middle_name_or_initial&quot;: &quot;Luis&quot;, &quot;count&quot;: 1},
+    ]
+)
+
+df = (
+    tmp.with_columns(pl.col(&quot;count&quot;).max().over(&quot;row_nr&quot;).alias(&quot;row_max&quot;))
+    .filter(pl.col(&quot;count&quot;) == pl.col(&quot;row_max&quot;))
+    .select(&quot;count&quot;, &quot;middle_name_or_initial&quot;, &quot;row_nr&quot;)
+)
+df
+
+------
+
+shape: (12, 3)
+┌───────┬────────────────────────┬────────┐
+│ count ┆ middle_name_or_initial ┆ row_nr │
+│ ---   ┆ ---                    ┆ ---    │
+│ i64   ┆ str                    ┆ i64    │
+╞═══════╪════════════════════════╪════════╡
+│ 8     ┆ R.                     ┆ 0      │
+│ 11    ┆ J.                     ┆ 1      │
+│ 1     ┆ Micha                  ┆ 2      │
+│ 1     ┆ M.                     ┆ 2      │
+│ 1     ┆ J.                     ┆ 2      │
+│ 1     ┆ E.                     ┆ 3      │
+│ 1     ┆ S.                     ┆ 3      │
+│ 1     ┆ M.                     ┆ 4      │
+│ 1     ┆ P.                     ┆ 4      │
+│ 15    ┆ Christopher            ┆ 5      │
+│ 1     ┆ Lusi                   ┆ 6      │
+│ 1     ┆ Luis                   ┆ 6      │
+└───────┴────────────────────────┴────────┘
+</code></pre>
+<p>Here is a way of creating a test dataframe code from the result above:</p>
+<pre><code>df.to_dict(as_series=False)
+---
+{'count': [8, 11, 1, 1, 1, 1, 1, 1, 1, 15, 1, 1],
+ 'middle_name_or_initial': ['R.',
+  'J.',
+  'Micha',
+  'M.',
+  'J.',
+  'E.',
+  'S.',
+  'M.',
+  'P.',
+  'Christopher',
+  'Lusi',
+  'Luis'],
+ 'row_nr': [0, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6]}
+</code></pre>
+<p>This can then be written as a test case in your question (in case you have future questions):</p>
+<pre class="lang-py prettyprint-override"><code>df_test = pl.DataFrame(
+    {
+        &quot;count&quot;: [8, 11, 1, 1, 1, 1, 1, 1, 1, 15, 1, 1],
+        &quot;middle_name_or_initial&quot;: [
+            &quot;R.&quot;,
+            &quot;J.&quot;,
+            &quot;Micha&quot;,
+            &quot;M.&quot;,
+            &quot;J.&quot;,
+            &quot;E.&quot;,
+            &quot;S.&quot;,
+            &quot;M.&quot;,
+            &quot;P.&quot;,
+            &quot;Christopher&quot;,
+            &quot;Lusi&quot;,
+            &quot;Luis&quot;,
+        ],
+        &quot;row_nr&quot;: [0, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6],
+    }
+)
+</code></pre>
