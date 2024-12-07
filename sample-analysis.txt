@@ -26,6 +26,8 @@ idk?
 - reasoning (?): answer has code, but not taken by sample
   - ex: wstchhwp_YOLO... - link "to avoid TypeSpec related error" mentioned in answer, but code isn't taken
   - unsure of this one, might be better suited to notcode but idk if we want to differentiate
+- multiple: multiple answers linked to, actual tags follow (slash separating ofc)
+  - separate classes for each answer by // (two slashes)
 
 interesting:
 - looked: looked at it, more analysis required
@@ -34,6 +36,10 @@ interesting:
 - identifiers: only identifiers changed (function/variable names)
 - slightly_different: some slight changes to code, but functionality is otherwise effectively the same
   - ex: yub3r_before... - different python 3 check & no read from buffer, but else branch verbatim sans comments
+- additions: kept original code, but added e.g. function parameters or other logic
+  - ex: snorkel-team_snorkel-extraction... - _connection func preserves Retry constructor (with more args) & mount call with additional trust_env macos thing
+- security: security-related in some way
+  - ex: none yet as far as I can remember
 
 - (NULL: not looked at yet)
 
@@ -63,3 +69,20 @@ specific sample changes:
 other notes:
 
 - why do we have 4 things from vignywang lmfao, they're all the same too
+
+==========================
+
+duplicate occurences of answers:
+
+- meta: begs question of inclusion just due to forks or maybe stealing code from other github repos?
+
+- mikepqr/resume.md is forked by 5 people in the dataset - see https://github.com/mikepqr/resume.md/blob/6a9525b5cc3c85045c48f3e607f0e0cd176dfb81/resume.py#L40C31-L40C34
+  - (answer link is the same)
+- answer 2039745 (QT HTMLDelegate) is independently referenced by 5 people?
+- answer 35504626 appears in 5 samples (requests backoff strategy?)
+- answer 38939320 (binary stdin) referenced for patriotctf2022 (twice) and TFTP stuff (twice)
+  - seem to have been copied from each other (sole function in file, same python3 that's different than SO)
+
+==========================
+
+z min: ~526 (for 151 analyzed)
