@@ -28,6 +28,7 @@ idk?
   - unsure of this one, might be better suited to notcode but idk if we want to differentiate
 - multiple: multiple answers linked to, actual tags follow (slash separating ofc)
   - separate classes for each answer by // (two slashes)
+- extra_info (?): code/explanations for the end user 
 
 interesting:
 - looked: looked at it, more analysis required
@@ -40,6 +41,7 @@ interesting:
   - ex: snorkel-team_snorkel-extraction... - _connection func preserves Retry constructor (with more args) & mount call with additional trust_env macos thing
 - security: security-related in some way
   - ex: none yet as far as I can remember
+- subset: took subset of code from SO answer, but otherwise verbatim
 
 - (NULL: not looked at yet)
 
@@ -69,6 +71,12 @@ specific sample changes:
 other notes:
 
 - why do we have 4 things from vignywang lmfao, they're all the same too
+- gnuppie/proxmark3 has a couple duplicate output_grabber.py files in samples
+- mcmtroffaes has a couple duplicate entries for bfs.py
+
+- answer 63839503 is a read for sure lol
+- kennyhngo_Wizard101_DanceBot... copy pasted comments with links to other SO answers lol
+- isiglobal_gifmaker... link hehe
 
 ==========================
 
@@ -82,6 +90,13 @@ duplicate occurences of answers:
 - answer 35504626 appears in 5 samples (requests backoff strategy?)
 - answer 38939320 (binary stdin) referenced for patriotctf2022 (twice) and TFTP stuff (twice)
   - seem to have been copied from each other (sole function in file, same python3 that's different than SO)
+- answer 59937363 - sphinx bibtex thing? same exact comment
+- answer 13891070 - time.time() reference used in *_MAFIA-USERBOT (or anobotz)
+- answers 67303315/31174427/6027615 - trlx/utils/modeling.py in 5 repos (3 utility functions)
+- answer 1870254 - utilities/helper.py (sizeof_fmt() function)
+- answer 3460942 - kabass_commcare-hq{,-path} both have corehq/util/models.py with TruncatingCharField
+- answer 38888131 - windows...things? "ended up just reading all the C documentation because it was more useful"
+- answer 54931135 - AWS IAM loading into Neo4j? 2 repos, path is Aaia/actions/aws/load/data/iam.py
 
 ==========================
 
