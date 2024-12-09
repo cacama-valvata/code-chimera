@@ -165,5 +165,5 @@ def dl_gh():
 
 
 #grab_github()
-redo_links()
-#dl_gh()
+#redo_links()
+dl_gh()

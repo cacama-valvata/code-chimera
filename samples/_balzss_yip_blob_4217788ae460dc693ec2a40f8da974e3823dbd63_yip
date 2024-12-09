@@ -1,0 +1,436 @@
+#!/usr/bin/env python3
+
+import argparse
+import configparser
+import locale
+import os
+import re
+import signal
+import sys
+import textwrap
+import threading
+import webbrowser
+from datetime import datetime
+from queue import Queue
+from subprocess import call
+
+import pip
+import requests
+
+try:
+    import xmlrpclib
+except ImportError:
+    import xmlrpc.client as xmlrpclib
+
+
+def create_default_config(location):
+    with open(location, 'w+') as rc:
+        rc.write('''# Copy this files content to ~/.yiprc
+# make sure every option is set otherwise it won't work
+# before every option there is a comment explaining the usage of that option
+# if you have any problem, delete your existing config file and replace it
+# with this fresh copy
+# more info at https://www.github.com/balzss/yip
+
+[aesthetics]
+# True if you want a colororized output, False if you don't
+# this has no effect on the output when it is redirected, because it is never
+# colorized
+use_colors = True
+
+# the number of empy lines printed between each result
+spacing = 1
+
+[general]
+# True if you want to use 'sudo pip install <package_name>', False
+# if you want to use 'pip install <package_name>' (same with uninstall)
+auto_sudo = True
+
+[auto_opts]
+# True if you want to use the '-date' flag automatically, False if you don't
+enable_date = False
+
+# True if you want to use the '-size' flag automatically, False if you don't
+enable_size = False
+
+# True if you want to use the '-license' flag automatically, False if you don't
+enable_license = False
+
+# True if you want to use the '-homepage' flag automatically, False if you don't
+enable_home_page = False
+
+# True if you want to use the '-regex' flag automatically, False if you don't
+enable_regex = False
+
+# The number of packages you want to display by default, for example if
+# you want only the 15 most relevant results set it to 15
+# it doesn't work when you are using the '-regex' flag
+limit = 99''')
+
+
+client = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
+
+# when user exits with Ctrl-C, don't show error msg
+signal.signal(signal.SIGINT, lambda x, y: sys.exit())
+
+size_suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+
+colors = {'red': '\033[0;31m',
+          'green': '\033[0;32m',
+          'yellow': '\033[0;33m',
+          'blue': '\033[1;34m',
+          'purple': '\033[1;35m',
+          'cyan': '\033[1;36m',
+          'grey': '\033[0;37m'}
+
+
+def color(color_id, string):
+    if opts['use_colors']:
+        return colors[color_id] + string + '\033[0m'
+    else:
+        return string
+
+
+def wrap(t):
+    return textwrap.fill(t,
+                         initial_indent='  ',
+                         subsequent_indent='  ',
+                         width=80,
+                         replace_whitespace=False)
+
+
+def human_size(b):
+    i = 0
+    while b >= 1024:
+        b /= 1024.
+        i += 1
+
+    # b > 1025 PetaByte
+    if i > 5:
+        return "Impossibly large"
+
+    return '%.2f %s' % (b, size_suffixes[i])
+
+
+def get_info(name, version, query):
+    # TODO rewrite this part and use xmlrpc instead of json
+    url = 'https://pypi.python.org/pypi/%s/json' % name
+    data = requests.get(url).json()
+    ver = data['info']['version']
+    ver_info = data['releases'][ver][0] if data['releases'][ver] else {}
+
+    return_info = {}
+
+    if 'license' in query and data['info']['license'] != 'UNKNOWN':
+        return_info['license'] = data['info']['license'].split('\n')[0]
+
+    if 'home_page' in query and data['info']['home_page'] != 'UNKNOWN':
+        return_info['home_page'] = data['info']['home_page']
+
+    if not ver_info:
+        return return_info
+
+    if 'date' in query:
+        date = datetime.strptime(ver_info['upload_time'].split('T')[0], '%Y-%m-%d')
+        return_info['date'] = datetime.strftime(date, '%x')
+
+    if 'size' in query:
+        return_info['size'] = human_size(ver_info['size'])
+
+    return return_info
+
+
+def get_extra_info_worker(job_queue, result_queue):
+    global loaded_results, result_count
+    while True:
+        args = job_queue.get()
+        extra_info = get_info(args['name'], args['version'], args['info_query'])
+        extra_info['key'] = args['key']
+        result_queue.put(extra_info)
+        loaded_results += 1
+        print_progress(loaded_results, result_count)
+        job_queue.task_done()
+
+
+def get_installed():
+    return {i.key: i.version for i in pip.get_installed_distributions()}
+
+
+def normal_search(q, i):
+    unordered_results = client.search({'name': q, 'summary': q}, 'or')
+    if type(q) is list:
+        q = ' '.join(q).lower()
+    else:
+        q = q.lower()
+    ranked_results = []
+    for r in unordered_results:
+        score = 0
+        if r['name'].lower() == q:
+            score = 1000
+        for s in q.split(' '):
+            score += r['name'].lower().count(s.lower()) * 3
+            if r['summary']:
+                score += r['summary'].lower().count(s.lower()) * 1
+
+        ranked_results.append({'name': r['name'],
+                               'version': r['version'],
+                               'summary': r['summary'],
+                               'score': score})
+    return sorted(ranked_results, key=lambda k: k['score'])[-i:]
+
+
+def regex_search(q):
+    package_names = client.list_packages()
+    regex_results = []
+    for p in package_names:
+        if re.match(q, p) is not None:
+            print(client.package_releases(p))
+            print(p)
+            version_info = client.package_releases(p)
+            if version_info:
+                version_info = version_info[0]
+            else:
+                continue
+            full_info = client.release_data(p, version_info)
+            regex_results.append({'name': full_info['name'],
+                                  'version': full_info['version'],
+                                  'summary': full_info['summary']})
+    return regex_results
+
+
+def set_opts(argv):
+    opts = {}
+    config = configparser.ConfigParser()
+    rc_file = os.getenv('HOME') + '/.yiprc'
+    if not os.path.exists(rc_file):
+        create_default_config(rc_file)
+    config.read(rc_file)
+
+    opts['auto_sudo'] = config.getboolean('general', 'auto_sudo')
+    opts['spacing'] = config.getint('aesthetics', 'spacing')
+    opts['use_colors'] = config.getboolean('aesthetics', 'use_colors') \
+        if sys.stdout.isatty() else False
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('query', nargs='+',
+                        help='Package name to search for')
+
+    parser.add_argument('-s', '--size',
+                        action='store_true',
+                        dest='size',
+                        help='Displays the size of each package',
+                        required=False,
+                        default=config.getboolean('auto_opts', 'enable_size'))
+    parser.add_argument('-d', '--date',
+                        action='store_true',
+                        dest='date',
+                        help='Displays the upload date of each package',
+                        required=False,
+                        default=config.getboolean('auto_opts', 'enable_date'))
+    parser.add_argument('-H', '--homepage',
+                        action='store_true',
+                        dest='home_page',
+                        help='Displays the homepage (if has any) of each package',
+                        required=False,
+                        default=config.getboolean('auto_opts', 'enable_home_page'))
+    parser.add_argument('-L', '--license',
+                        action='store_true',
+                        dest='license',
+                        help='Displays the license(if stated) of each package',
+                        required=False,
+                        default=config.getboolean('auto_opts', 'enable_license'))
+    parser.add_argument('-r', '--regex',
+                        action='store_true',
+                        dest='regex',
+                        help='Enables regex search',
+                        required=False,
+                        default=config.getboolean('auto_opts', 'enable_regex'))
+    parser.add_argument('-l', '--limit',
+                        type=int,
+                        dest='limit',
+                        help='Limits your results to the N most relevant ones',
+                        required=False,
+                        default=config.getint('auto_opts', 'limit'))
+
+    opts.update(vars(parser.parse_args()))
+    opts['query'] = ' '.join(opts['query'])
+
+    return opts
+
+
+def create_list(ordered_res, opts):
+    global result_count
+
+    job_queue = Queue()
+    result_queue = Queue()
+    for i in range(16):
+        worker = threading.Thread(
+            target=get_extra_info_worker,
+            args=(job_queue, result_queue,),
+            name='worker-{}'.format(i),
+        )
+        worker.setDaemon(True)
+        worker.start()
+
+    result_count = len(ordered_res)
+    formatted_list = []
+    for i, r in enumerate(ordered_res):
+
+        name = r['name']
+        version = r['version']
+        description = r['summary']
+        description = '---' if not description else description
+        f_installed = ''
+
+        if name in installed_packages:
+            f_installed = ' INSTALLED: '
+            if installed_packages[name] == version:
+                f_installed += '(latest)'
+            else:
+                f_installed += '(%s)' % installed_packages[name]
+            f_installed = color('purple', f_installed)
+
+        formatted_list.append({'name': name,
+                               'installed': f_installed,
+                               'summary': description,
+                               'version': version,
+                               'extra': ''})
+
+        info_query = [key for key, value in opts.items() if value is True]
+        if info_query:
+            job_queue.put({'key': i,
+                           'name': name,
+                           'version': version,
+                           'info_query': info_query})
+
+    job_queue.join()
+
+    extra_infos = {}
+    while not result_queue.empty():
+        extra_info = result_queue.get()
+        extra_infos[extra_info['key']] = extra_info
+
+    final_formatted_list = []
+    final_formatted_list[:] = formatted_list
+    for key, item in enumerate(formatted_list):
+        extra_info = extra_infos[key]
+        extra_info.pop('key', None)
+        f_extra = ' | '.join([color('grey', value) for key, value in extra_info.items() if key != 'home_page'])
+        final_formatted_list[key]['extra'] = f_extra
+        if 'home_page' in extra_info:
+            final_formatted_list[key]['home_page'] = extra_info['home_page']
+
+    return final_formatted_list
+
+
+def get_choice():
+    print(color('yellow', '=====Enter package number for options====='))
+    return input(color('yellow', '>>> '))
+
+
+def print_list(formatted_list, q):
+    out = ' '.join(q) if type(q) is list else q
+    if len(formatted_list) == 0:
+        print(color('yellow', '\nNo results for ') + color('blue', out))
+        sys.exit()
+    for i, r in enumerate(formatted_list):
+        f_name = color('blue', '[%d] %s (%s)' % (i, r['name'], r['version']))
+        installed = r['installed']
+        extra = r['extra']
+        print('%s%s %s' % (f_name, installed, extra))
+        if 'home_page' in r:
+            print(color('yellow', wrap(r['home_page'])))
+        print('%s%s' % (wrap(r['summary']), '\n' * opts['spacing']))
+    choice = get_choice()
+    print_options(choice, q)
+
+
+def print_options(pp_choice, q):
+    if not pp_choice.isdigit() or 0 > int(pp_choice) >= len(ordered_packages):
+        sys.exit()
+    else:
+        p_choice = ordered_packages[int(pp_choice)]
+
+    if p_choice['name'] in installed_packages:
+        install_option = '[r]emove'
+        p_status = 'INSTALLED (latest)'
+
+        if installed_packages[p_choice['name']] != p_choice['version']:
+            install_option += '\n  [u]pdate to (%s)' % p_choice['version']
+            p_status = 'INSTALLED (%s)' % installed_packages[p_choice['name']]
+
+    else:
+        install_option = '[i]nstall'
+        p_status = 'Not installed'
+
+    parsed_info = get_info(p_choice['name'],
+                           p_choice['version'],
+                           ['home_page', 'date', 'license', 'size'])
+
+    p_info = '%s\n%s\n%s\n%s' % (parsed_info['date'],
+                                 parsed_info['license'],
+                                 parsed_info['size'],
+                                 parsed_info['home_page'])
+
+    print(color('blue', '\nName: %s' % p_choice['name']))
+    print(color('purple', 'Version: %s\nStatus: %s' % (p_choice['version'], p_status)))
+    print(color('grey', p_info))
+
+    print(color('yellow', '\nOptions:'))
+    print(wrap('[b]ack to search results'))
+    print(wrap('[o]pen homepage in browser'))
+    print(wrap(install_option))
+
+    o_choise = input(color('yellow', '\n>>> '))
+    if o_choise == 'b':
+        print_list(formatted_packages, q)
+    elif o_choise == 'i' and '[i]' in install_option or \
+            (o_choise == 'u' and '[u]' in install_option):
+        print('Installing package...')
+        if opts['auto_sudo']:
+            call('sudo pip install %s -U' % p_choice['name'], shell=True)
+        elif pip.main(['install', '--upgrade', p_choice['name']]) > 0:
+            if input(color('yellow', '\nRetry as root [y]? ')) != 'y':
+                sys.exit()
+            call('sudo pip install %s -U' % p_choice['name'], shell=True)
+    elif o_choise == 'o':
+        print('Opening in browser...')
+        webbrowser.open(parsed_info['home_page'].split(' ')[-1], new=2)
+        print_options(pp_choice)
+    elif o_choise == 'r' and '[r]' in install_option:
+        print('Removing package...')
+        if opts['auto_sudo']:
+            call('sudo pip uninstall %s' % p_choice['name'], shell=True)
+        elif pip.main(['uninstall', p_choice['name']]) > 0:
+            if input(color('yellow', '\nRetry as root [y]? ')) != 'y':
+                sys.exit()
+            call('sudo pip uninstall %s' % p_choice['name'], shell=True)
+
+
+# http://stackoverflow.com/a/34325723
+def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):
+    format_str = "{0:." + str(decimals) + "f}"
+    percent = format_str.format(100 * (iteration / float(total)))
+    filled_length = int(round(bar_length * iteration / float(total)))
+    bar = '█' * filled_length + '-' * (bar_length - filled_length)
+    sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar, percent, '%', suffix)),
+    if iteration == total:
+        sys.stdout.write('\n\n')
+    sys.stdout.flush()
+
+
+if __name__ == "__main__":
+    opts = set_opts(sys.argv)
+
+    loaded_results = 0
+    result_count = 1
+    print_progress(loaded_results, result_count)
+
+    installed_packages = get_installed()
+    locale.setlocale(locale.LC_ALL, '')
+
+    ordered_packages = regex_search(opts['query']) if opts['regex'] \
+        else normal_search(opts['query'], opts['limit'])
+    formatted_packages = create_list(ordered_packages, opts)
+    print_list(formatted_packages, opts['query'])
