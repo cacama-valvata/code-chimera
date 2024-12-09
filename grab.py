@@ -150,6 +150,7 @@ def dl_gh():
         
         response = requests.get(repo_url.replace("blob", "raw"))
         if response.status_code != 200:
+            print(f"Error {response.status_code}: {repo_url.replace("blob", "raw")}")
             return
 
         with open(resdir + "/" + resfn, "w") as f:
@@ -157,12 +158,12 @@ def dl_gh():
 
         return
 
-    repos = open("github.list.output", "r").read().splitlines()
-    pool = ThreadPool(1)
+    repos = open("github.list.output.new", "r").read().splitlines()
+    pool = ThreadPool(50)
     pool.map(repo_process, repos)
     print("done :3")
 
 
 #grab_github()
-#dl_gh()
 redo_links()
+#dl_gh()
