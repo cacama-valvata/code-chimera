@@ -4,6 +4,7 @@ import urllib
 import subprocess
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Process, Queue
+from collections import defaultdict
 
 # https://docs.github.com/en/search-github/searching-on-github/searching-code
 def grab_github ():
@@ -163,7 +164,77 @@ def dl_gh():
     pool.map(repo_process, repos)
     print("done :3")
 
+def grep(big_text, small_text):
+    results=[]
+    for line in big_text:
+        if small_text in line:
+            results.append(line)
+    return results
+    
+def grep2(big_text, small_text):
+    results=[]
+    for i in range(len(big_text)):
+        if small_text in big_text[i]:
+            return i
+    return -1
+
+def redo_dates():
+    with open(".github.cache", "r") as f:
+        repos = f.read().splitlines()
+    n = len(repos)
+    repos = list(set(repos))
+
+    # build dictionary
+    grep_output = {}
+    for repo in repos:
+        resdir = "old_samples"
+        resfn = repo[18:].replace("/", "_")
+        with open(resdir + "/" + resfn, "r") as f:
+            old_file = f.read().splitlines()
+
+        results = grep(old_file, "stackoverflow.com")
+        grep_output[repo] = (results, 0)
+        if repo == "https://github.com/balanced/wac/blob/453a81097357a1f7fbf0533096d3df75a2808ecf/wac.py":
+            print(results)
+
+    with open("github.list.output.new", "r") as f:
+        new_urls = f.read().splitlines()
+    with open(".github.cache", "r") as f:
+        new_urls_keys = f.read().splitlines()
+
+    match_cache = defaultdict(int)
+
+    for i in range(n):
+        key = new_urls_keys[i]
+        file_path = "samples/" + new_urls[i][18:].replace("/", "_")
+        with open(file_path, "r") as f:
+            file_text = f.read().splitlines()
+        results, index = grep_output[key]
+        if index >= len(results):
+            print(f"Over-index error on line {i+1}")
+            with open("github.lines.output.new", "a") as f:
+                f.write("\n")
+            continue
+        next_match = results[index]
+        next_idx = match_cache[file_path]
+        sub_results = grep2(file_text[next_idx:], next_match)
+        if sub_results == -1:
+            print(f"No matches found on line {i+1}")
+            with open("github.lines.output.new", "a") as f:
+                f.write("\n")
+            continue
+        infile_line_number = next_idx + sub_results + 1
+        with open("github.lines.output.new", "a") as f:
+            f.write(str(infile_line_number) + "\n")
+
+        grep_output[key] = (results, index + 1)
+        match_cache[file_path] = infile_line_number
+
+    print("done :3")
+
+
 
 #grab_github()
 #redo_links()
-dl_gh()
+#dl_gh()
+redo_dates()

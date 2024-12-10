@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+
+# TIPSY: Telco pIPeline benchmarking SYstem
+#
+# Copyright (C) 2018 by its authors (See AUTHORS)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import copy
+import glob
+import inspect
+import itertools
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path, PosixPath
+
+from lib import find_mod
+from lib import validate
+
+
+def json_dump(obj, target):
+    """Serialize ``obj`` as a JSON formatted text to ``target``.
+target is either a filename, a PosixPath, or a file-like object.
+"""
+    def dump_to_file(obj, outfile):
+        json.dump(obj, outfile, indent=4, sort_keys=True)
+        outfile.write("\n")
+
+    if type(target) == PosixPath:
+        with target.open('w') as outfile:
+            dump_to_file(obj, outfile)
+    elif type(target) == str:
+        with open(target, 'w') as outfile:
+            dump_to_file(obj, outfile)
+    else:
+        dump_to_file(obj, target)
+
+
+def conf_merge(dst, src, props_to_concat=None, property=None):
+    if dst is None:
+        return src
+
+    if props_to_concat and property in props_to_concat:
+        if type(dst) == str and type(src) == str:
+            return dst + " " + src
+
+    if type(dst) in [int, float, str, bool]:
+        return src
+
+    if type(dst) == list:
+        if type(src) == list:
+            return dst + src
+        else:
+            return dst + [src]
+
+    if isinstance(dst, dict):
+        if isinstance(src, dict):
+            for k, v in src.items():
+                dst[k] = conf_merge(dst.get(k), v, props_to_concat, k)
+            return dst
+
+    if type(src) in [int, float, str, bool]:
+        return src
+
+    raise TypeError('incompatible types: cannot merge %s -> %s'
+                    % (type(src), type(dst)))
+
+
+class TipsyConfig(dict):
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return self[name.replace('-', '_')]
+
+    def __setattr__(self, name, value):
+        self[name.replace('_', '-')] = value
+
+    def __delattr__(self, name):
+        del self[name.replace('-', '_')]
+
+    def __deepcopy__(self, memo):
+        return copy.deepcopy(dict(self))
+
+    def gen_configs(self):
+        self.configs = []
+        for b in self.get('benchmark', []):
+            try:
+                benchmark = TipsyConfig(copy.deepcopy(self.default))
+            except KeyError:
+                benchmark = TipsyConfig()
+            conf_merge(benchmark, b)
+            scale = getattr(self, '_scale_%s' % benchmark.get('scale', 'none'))
+            segments = [x for x in benchmark.keys() if x != 'scale']
+            confs = {}
+            for segment in segments:
+                confs[segment] = scale(getattr(benchmark, segment))
+            confs = self._scale_outer(confs)
+            for conf in confs:
+                validate.validate_data(conf, schema_name='benchmark')
+                self.configs.append(conf)
+
+        # Oder should not matter, but we need to reboot the SUT if
+        # sut.type changes, so it makes sense to minimize the number
+        # of reboots by conducting similar measurements next to each
+        # other.
+        self.configs.sort(key=lambda x: x.get('sut', {}).get('type', ''))
+
+    def _scale_none(self, conf_dict):
+        if type(conf_dict) not in [dict, TipsyConfig]:
+            return conf_dict
+        return [{k: v[0] if type(v) == list else v
+                 for k, v in conf_dict.items()}]
+
+    def _scale_outer(self, conf_dict):
+        if type(conf_dict) not in [dict, TipsyConfig]:
+            return conf_dict
+        tmp = {k: v if type(v) == list else [v] for k, v in conf_dict.items()}
+        return list((dict(zip(tmp, x))
+                     for x in itertools.product(*tmp.values())))
+
+    def _scale_joint(self, conf_dict):
+        if type(conf_dict) not in [dict, TipsyConfig]:
+            return conf_dict
+        min_len = min([len(v)
+                       for k, v in conf_dict.items() if type(v) == list]
+                      or [1])
+        ret_list = []
+        for i in range(min_len):
+            ret_list.append({k: v[i] if type(v) == list else v
+                             for k, v in conf_dict.items()})
+        return ret_list
+
+
+class TipsyManager(object):
+    def __init__(self, args):
+        self.tipsy_dir = Path(__file__).resolve().parent
+        self.args = args
+        self.fname_pl_in = 'pipeline-in.json'
+        self.fname_pl = 'pipeline.json'
+        self.fname_pcap_in = 'traffic.json'
+        self.fname_bm = 'benchmark.json'
+        self.fname_pcap = 'traffic.pcap'
+        self.fname_conf = '.tipsy.json'
+        self.meas_dir = 'measurements'
+        self.plot_dir = 'plots'
+
+    def do_init(self):
+        fname = 'main.json'
+        data = {'benchmark': [{'pipeline': {'name': self.args.pipeline}}],
+                'default': {'pipeline': {'name': self.args.pipeline}}}
+        validate.validate_data(data, schema_name='main')
+        json_dump(data, fname)
+        print(inspect.cleandoc("""
+          The sample config file ({fname}) has been created.
+          Edit it, then run: {prg} config
+        """.format(fname=fname, prg=sys.argv[0])))
+
+    def validate_json_conf(self, fname, data=None):
+        if data is None:
+            with open(fname) as f:
+                data = json.load(f)
+        try:
+            validate.validate_data(data, schema_name='pipeline')
+        except Exception as e:
+            print('Validation failed for: %s' % fname)
+            # We should tell the exact command to run
+            sys.exit('For details run something like: '
+                     'validate.py -s schema/pipeline-mgw.json %s' % fname)
+
+    def do_validate(self, cli_args=None):
+        # TODO: set cli_args in the caller
+
+        join = os.path.join
+        if cli_args:
+            for fname in cli_args:
+                self.validate_json_conf(fname)
+        elif os.path.exists(self.fname_pl_in):
+            self.validate_json_conf(self.fname_pl_in)
+        elif os.path.exists(self.meas_dir):
+            p = join(self.meas_dir, '[0-9][0-9][0-9]', self.fname_pl_in)
+            for fname in glob.glob(p):
+                self.validate_json_conf(fname)
+        else:
+            p = join('[0-9][0-9][0-9]', self.fname_pl_in)
+            for fname in glob.glob(p):
+                self.validate_json_conf(fname)
+
+    def validate_main(self):
+        # We cannot fully validate a configuration until we generate
+        # the exact config with the "scale" property.  But some errors
+        # can be catched if we allow a property to be either its
+        # original type or an array of the type.
+        try:
+            validate.validate_data(self.tipsy_conf,
+                                   schema_name='main',
+                                   extension='property_array')
+        except Exception as e:
+            sys.exit("Validation failed for: %s\n%s" % (self.fname_conf, e))
+
+    @staticmethod
+    def do_update_mod():
+        # The pipeline schema references the individual schemas.
+        outdir = Path(__file__).parent / 'schema'
+        pl = find_mod.glob('pipeline-*.json')
+        pl += glob.glob(str(outdir / 'pipeline-*.json'))
+        pl = [ os.path.basename(p) for p in pl ]
+        pl = ['{"$ref": "%s#"}' % pl_name for pl_name in pl]
+        pipelines = ",\n    ".join(sorted(pl))
+
+        src = Path(__file__).parent / 'lib' / 'pipeline.json.in'
+        dst = outdir / 'pipeline.json'
+        replacements = {
+            'auto': 'This file is autogenerated, do not edit',
+            'pipelines': pipelines,
+        }
+        TipsyManager.create_file_from_template(src, dst, replacements)
+
+        # The tester schema merges individual schemas into itself.
+        # This is inconsistent with the pipeline schema, but it makes
+        # possible to define 'trex-dir' in the defaults section.
+        schema = {}
+        for fname in find_mod.glob('tester-*.json'):
+            with open(fname) as f:
+                s = json.load(f)
+            schema = conf_merge(schema, s, ['description'])
+        json_dump(schema, outdir / 'tester.json')
+
+        # The sut schema merges individual schemas into itself.
+        schema = {}
+        for fname in find_mod.glob('sut-*.json'):
+            with open(fname) as f:
+                s = json.load(f)
+            schema = conf_merge(schema, s, ['description'])
+        json_dump(schema, outdir / 'sut.json')
+
+        # The plot schema simply collects the plot types and does not
+        # allow module writers to extend, redefine schema properties.
+        # TODO: refactor to the merger/reference method.
+        src = Path(__file__).parent / 'lib' / 'plot.json.in'
+        dst = outdir / 'plot.json'
+        pl = find_mod.glob('Plot_*.py')
+        pl = [ os.path.basename(p) for p in pl ]
+        pl = [ p.replace('Plot_', '').replace('.py', '') for p in pl ]
+        replacements['plot-types'] = '", "'.join(sorted(pl))
+        TipsyManager.create_file_from_template(src, dst, replacements)
+
+
+    def init_tipsyconfig(self, config_files=None):
+        def conf_load(d): return TipsyConfig(**d)
+        if not config_files:
+            config_files = []
+            for f in sorted(Path.cwd().glob('*.json')):
+                if not f.name.startswith('.'):
+                    # https://bugs.python.org/issue26096
+                    config_files.append(str(f.name))
+        for f in ['/etc/tipsy.json', '~/.tipsy.json']:
+            f = Path(f).expanduser()
+            if f.exists():
+                config_files = [str(f)] + config_files
+        self.tipsy_conf = conf_load({})
+        for config_file in config_files:
+            print('Processing config file: %s' % config_file)
+            with open(config_file, 'r') as cf:
+                try:
+                    new = json.load(cf, object_hook=conf_load)
+                except json.decoder.JSONDecodeError as e:
+                    sys.exit('Failed to load file (%s):\n%s' %
+                             (config_file, e))
+                conf_merge(self.tipsy_conf, new)
+        self.validate_main()
+        print('Saving config file    : %s' % self.fname_conf)
+        json_dump(self.tipsy_conf, self.fname_conf)
+
+    @staticmethod
+    def create_file_from_template(src, dst, replacements):
+        content = src.read_text()
+        for old, new in replacements.items():
+            content = content.replace('@%s@' % old, new)
+        dst.write_text(content)
+
+    def write_makefile(self, out_dir, template):
+        src = Path(__file__).parent / 'lib' / template
+        dst = out_dir / 'Makefile'
+        replacements = {'tipsy': str(Path(__file__).resolve())}
+        self.create_file_from_template(src, dst, replacements)
+
+    def json_validate_and_dump(self, data, outfile, schema_name):
+        # Treat the 'pipeline' schema specially, because the errors of
+        # the general check is not very helpful.
+        if schema_name == 'pipeline':
+            schema_name = 'pipeline-%s' % data.get('name', '')
+        try:
+            validate.validate_data(data, schema_name=schema_name)
+        except Exception as e:
+            sys.exit("Failed validating %s:\n%s" % (outfile, e))
+        json_dump(data, outfile)
+
+    def create_dir(self, dir):
+        if self.args.force and os.path.exists(dir):
+            shutil.rmtree(dir)
+        try:
+            os.mkdir(dir)
+        except FileExistsError as e:
+            print(e)
+            print('(You can use the --force argument: tipsy config --help)')
+            exit()
+
+    def config_plots(self):
+        self.create_dir(self.plot_dir)
+        save = self.json_validate_and_dump
+        v_confs = self.tipsy_conf.get('visualize', [])
+        out_dirs = []
+        for i, config in enumerate(v_confs, start=1):
+            print('*', end='', flush=True)
+            id = '%03d' % i
+            out_dirs.append(id)
+            out_dir = Path(self.plot_dir, id)
+            out_dir.mkdir()
+            save(config, out_dir / 'plot.json', 'plot')
+            self.write_makefile(out_dir, 'plot-makefile.in')
+        with Path(self.plot_dir, 'fig.tex').open('w') as f:
+            f.write(inspect.cleandoc(r'''
+              \documentclass{article}
+              %\def\pgfsysdriver{pgfsys-dvipdfm.def}
+              \usepackage{pgfplots}
+              \pgfplotsset{compat = newest}
+
+              % Use a single count for figures and tables in LaTeX
+              % https://stackoverflow.com/a/3866061
+              \makeatletter
+              \renewcommand*{\thetable}{\arabic{table}}
+              \renewcommand*{\thefigure}{\arabic{figure}}
+              \let\c@table\c@figure
+              \makeatother
+            '''))
+            f.write("\n")
+            for dir in out_dirs:
+                f.write("  \\input{%s/preamble.tex}\n" % dir)
+            f.write("\\begin{document}\n")
+            for dir in out_dirs:
+                f.write("  \\input{%s/fig.tex}\n" % dir)
+            f.write("\\end{document}\n")
+
+    def config_measurements(self):
+        self.create_dir(self.meas_dir)
+        save = self.json_validate_and_dump
+        for i, config in enumerate(self.tipsy_conf.configs, start=1):
+            print('.', end='', flush=True)
+            out_dir = Path(self.meas_dir, '%03d' % i)
+            out_dir.mkdir()
+            save(config['pipeline'], out_dir / self.fname_pl_in, 'pipeline')
+            save(config['traffic'], out_dir / self.fname_pcap_in, 'traffic')
+            save(config, out_dir / self.fname_bm, 'benchmark')
+            self.write_makefile(out_dir, 'per-dir-makefile.in')
+
+    def do_list_module_tests(self):
+        print("\n".join(find_mod.glob('test-*.json')))
+
+    def do_config(self):
+        self.init_tipsyconfig(self.args.configs)
+        self.tipsy_conf.gen_configs()
+
+        self.write_makefile(Path.cwd(), 'main-makefile.in')
+        if args.plots:
+            self.config_plots()
+            print('\nTo start the visualization, run: make plots')
+        else:
+            self.config_measurements()
+            self.config_plots()
+            print('\nTo start the measurements, run: make')
+
+    def run_tester(self, dir):
+        tester = getattr(sys.modules[__name__],
+                         "%Runner" % self.tipsy_conf.tester.type.title())
+        test_runner = tester(self.tipsy_conf)
+        test_runner.run(dir)
+
+    def do_make(self):
+        for cmd in ('validate', 'config', 'run'):
+            getattr(self, 'do_%s' % cmd)()
+
+    def do_clean(self):
+        os.remove(self.fname_conf)
+        shutil.rmtree(self.meas_dir)
+        # TODO
+
+
+if __name__ == '__main__':
+    if not find_mod.list_pipelines():
+        TipsyManager.do_update_mod()
+        find_mod.list_pipelines(True)
+
+    parser = argparse.ArgumentParser(
+        description='TIPSY: Telco pIPeline benchmarking SYstem')
+    subparsers = parser.add_subparsers(dest='command')
+    subparsers.required = True
+    init = subparsers.add_parser('init',
+        help='Init tipsy in current directory with a sample configuration')
+    init.formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    init.add_argument('pipeline', type=str, nargs='?',
+                      choices=find_mod.list_pipelines(),
+                      help='Pipeline name', default='mgw')
+    config = subparsers.add_parser('config', help='Configure TIPSY')
+    config.add_argument('configs', type=str, nargs='*',
+                        help='Compile main JSON config')
+    config.add_argument('--force', '-f',
+                        default=False, action="store_true",
+                        help='Delete measurement directories')
+    config.add_argument('--plots', '-p',
+                        default=False, action="store_true",
+                        help='Generate config files only for visualization')
+    extr = subparsers.add_parser('extract',
+                                 help='Extract a subtree from a json file')
+    vali = subparsers.add_parser('validate', help='Validate configurations')
+    vali.add_argument('configs', type=argparse.FileType('r'),
+                      help='Config JSON files', nargs='*',
+                      default=None)
+    subparsers.add_parser('update-mod',
+                          help='Update internal files based on the module dir')
+    subparsers.add_parser('list-module-tests',
+        help='List test configurations under the module dir ("test-*.json")')
+    run = subparsers.add_parser('run', help='Run benchmarks')
+    make = subparsers.add_parser('make', help='Do everything')
+    clean = subparsers.add_parser('clean', help='Clean up pcaps, logs, etc.')
+
+    try:
+        import argcomplete
+        argcomplete.autocomplete(parser)
+    except ImportError:
+        pass
+    args = parser.parse_args()
+
+    tipsy = TipsyManager(args)
+    action = getattr(tipsy, 'do_%s' % args.command.replace('-', '_'))
+    action()
