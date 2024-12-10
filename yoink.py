@@ -3,6 +3,7 @@ import pathlib
 import sqlite3
 import re
 import time
+from stackapi import StackAPI
 
 samples_dir = pathlib.Path("samples")
 answers_dir = pathlib.Path("timely_answers")
@@ -10,6 +11,7 @@ answers_dir = pathlib.Path("timely_answers")
 answer_link_re = re.compile(r"stackoverflow\.com/a/(\d+)")
 
 API_ENDPOINT = "https://api.stackexchange.com/2.3"
+SITE = StackAPI('stackoverflow')
 
 if __name__ == "__main__":
     answers_dir.mkdir(exist_ok=True)
@@ -25,7 +27,7 @@ if __name__ == "__main__":
         "pagesize": 100
     }
 
-    not_exist = {}
+    not_exist = set()
 
     # get deduplicated ids from files
     for (rowid, filename, commit_timestamp) in db.execute("SELECT rowid, file, commit_timestamp FROM samples WHERE answer_link"):
@@ -39,8 +41,9 @@ if __name__ == "__main__":
 
             # don't request an answer's revisions if we know it doesn't exist or if we've already fetched it
             if answer_id not in not_exist and not save_path.exists():
-                revision_resp = requests.get(API_ENDPOINT + "/posts/" + str(answer_id) + "/revisions", params=query_args)
-                resp_json = revision_resp.json()
+                # revision_resp = requests.get(API_ENDPOINT + "/posts/" + str(answer_id) + "/revisions", params=query_args)
+                # resp_json = revision_resp.json()
+                resp_json = SITE.fetch('posts/396109/revisions', filter='dnzp4nYyxcbLfyMJb')
 
                 # whether post exists on SO (info was returned from server)
                 exists = bool(resp_json.get("items"))
@@ -58,6 +61,6 @@ if __name__ == "__main__":
                     else:
                         # save body to file
                         with open(save_path, "w") as out:
-                            out.write(rev["body"])
+                            out.write(relevant_revision["body"])
 
     print("answer IDs not returned by stackoverflow:", not_exist)
