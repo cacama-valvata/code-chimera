@@ -28,11 +28,12 @@ db = sqlite3.connect("samples.db")
 
 try:
     # oh nooo sql injection
-    for rowid, file in db.execute(f"SELECT rowid, file FROM samples WHERE classification IS NULL ORDER BY rowid {order}"):
+    for rowid, file, line_no in db.execute(f"SELECT rowid, file, link_line_number FROM samples WHERE answer_link and classification IS NULL ORDER BY rowid {order}"):
         if rowid not in classifications:
             print()
             print("rowid:", rowid)
             print(f"file: samples/{file}")
+            print(f"line no: {line_no}")
             classifications[rowid] = input("classification: ")
 except KeyboardInterrupt:
     print()
