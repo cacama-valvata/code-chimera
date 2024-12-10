@@ -2,9 +2,10 @@ import requests
 import pathlib
 import sqlite3
 import re
+import time
 
 samples_dir = pathlib.Path("samples")
-answers_dir = pathlib.Path("linked_answers")
+answers_dir = pathlib.Path("timely_answers")
 
 answer_link_re = re.compile(r"stackoverflow\.com/a/(\d+)")
 
@@ -14,48 +15,49 @@ if __name__ == "__main__":
     answers_dir.mkdir(exist_ok=True)
 
     db = sqlite3.connect("samples.db")
-    answer_ids = set()
+
+    revisions = {}
+
+    query_args = {
+        # this filter only contains body and creation_date
+        "filter": "dnzp4nYyxcbLfyMJb",
+        "site": "stackoverflow",
+        "pagesize": 100
+    }
+
+    not_exist = {}
 
     # get deduplicated ids from files
-    for (filename,) in db.execute("SELECT file FROM samples WHERE answer_link"):
+    for (rowid, filename, commit_timestamp) in db.execute("SELECT rowid, file, commit_timestamp FROM samples WHERE answer_link"):
         with open(samples_dir / filename) as sample_file:
             sample = sample_file.read()
 
         answers_from_file = set(map(lambda match: match.group(1), answer_link_re.finditer(sample)))
 
         for answer_id in list(answers_from_file):
-            if (answers_dir / f"{answer_id}.md").exists():
-                answers_from_file.remove(answer_id)
+            save_path = answers_dir / f"{answer_id}-{rowid}.html"
 
-        answer_ids |= answers_from_file
+            # don't request an answer's revisions if we know it doesn't exist or if we've already fetched it
+            if answer_id not in not_exist and not save_path.exists():
+                revision_resp = requests.get(API_ENDPOINT + "/posts/" + str(answer_id) + "/revisions", params=query_args)
+                resp_json = revision_resp.json()
 
-    # split ids into 100-id chunks, to batch into requests
-    answer_id_list = list(answer_ids)
-    answer_id_queries = []
-    for offset in range(0, len(answer_id_list), 100):
-        query_string = ";".join(answer_id_list[offset:offset+100])
-        answer_id_queries.append(query_string)
+                # whether post exists on SO (info was returned from server)
+                exists = bool(resp_json.get("items"))
 
-    query_args = {
-        # this filter only contains answer_id, body, and body_markdown
-        "filter": "!nNPvSNHN_S",
-        "site": "stackoverflow",
-        "pagesize": 100
-    }
+                if not exists:
+                    not_exist.add(answer_id)
+                else:
+                    # only process if this answer has revisions (i.e., it exists)
+                    # NOTE: in this branch exists has at least one item
 
-    not_present = answer_ids
-    for query in answer_id_queries:
-        answers_resp = requests.get(API_ENDPOINT + "/posts/" + query + "/revisions", params=query_args)
-        resp_json = answers_resp.json()
-        present = {str(answer["answer_id"]) for answer in resp_json["items"]}
-        not_present -= present
+                    relevant_revision = max((rev for rev in resp_json["items"] if rev["creation_date"] <= commit_timestamp), key=lambda rev: rev["creation_date"], default=None)
 
-        for answer in resp_json["items"]:
-            answer_id = answer["answer_id"]
-            # with open(answers_dir / (str(answer_id) + ".md"), "w") as markdown:
-            #   markdown.write(answer["body_markdown"])
+                    if relevant_revision is None:
+                        print(f"no revisions that make sense timingwise for answer {answer_id} (this shouldn't happen???)")
+                    else:
+                        # save body to file
+                        with open(save_path, "w") as out:
+                            out.write(rev["body"])
 
-            with open(answers_dir / (str(answer_id) + ".html"), "w") as html:
-              html.write(answer["body"])
-
-    print("answer IDs not returned by stackoverflow:", not_present)
+    print("answer IDs not returned by stackoverflow:", not_exist)
