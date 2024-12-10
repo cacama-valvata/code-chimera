@@ -1,0 +1,15 @@
+<p>It is not possible to obtain the value of chi^2 from <code>scipy.optimize.curve_fit</code> directly without manual calculations. It is possible to get additional output from <code>curve_fit</code> besides <code>popt</code> and <code>pcov</code> by providing the argument <code>full_output=True</code>, but the additional output does not contain the value of chi^2. (The additional output is documented e.g. at <code>leastsq</code> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.leastsq.html#scipy.optimize.leastsq" rel="nofollow noreferrer">here</a>).</p>
+<p>In the case where <code>sigma</code> is a MxM array, the definition of the chi^2 function minimized by curve_fit is slightly different.
+In this case, <code>curve_fit</code> minimizes the function <code>r.T @ inv(sigma) @ r</code>, where <code>r = ydata - f(xdata, *popt)</code>, instead of <code>chisq = sum((r / sigma) ** 2)</code> in the case of one dimensional <code>sigma</code>, see the <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html" rel="nofollow noreferrer">documentation</a> of the parameter <code>sigma</code>.
+So you should also be able to calculate chi^2 in your case by using <code>r.T @ inv(sigma) @ r</code> with your optimized parameters.</p>
+<p>An alternative would be to use another package, for example <a href="https://lmfit.github.io/lmfit-py/" rel="nofollow noreferrer">lmfit</a>, where the value of chi square can be directly obtained from the fit result:</p>
+<pre><code>from lmfit.models import GaussianModel
+
+model = GaussianModel()
+
+# create parameters with initial guesses:
+params = model.make_params(center=9, amplitude=40, sigma=1)  
+
+result = model.fit(n, params, x=centers)
+print(result.chisqr)
+</code></pre>

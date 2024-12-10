@@ -1,0 +1,41 @@
+<p>This is a really old post but there has not been an answer here, I was looking for something exactly like this, and I had spend 6 hours going through Stackoverflow, and ended up just reading all the C documentation because it was more useful.</p>
+<pre><code>#you will need the win32 libraries for this snippet of code to work, Links below
+import win32gui
+import win32con
+import win32api
+from time import sleep
+
+#[hwnd] No matter what people tell you, this is the handle meaning unique ID, 
+#[&quot;Notepad&quot;] This is the application main/parent name, an easy way to check for examples is in Task Manager
+#[&quot;test - Notepad&quot;] This is the application sub/child name, an easy way to check for examples is in Task Manager clicking dropdown arrow
+#hwndMain = win32gui.FindWindow(&quot;Notepad&quot;, &quot;test - Notepad&quot;) this returns the main/parent Unique ID
+hwndMain = win32gui.FindWindow(&quot;Notepad&quot;, &quot;test - Notepad&quot;)
+
+#[&quot;hwndMain&quot;] this is the main/parent Unique ID used to get the sub/child Unique ID
+#[win32con.GW_CHILD] I havent tested it full, but this DOES get a sub/child Unique ID, if there are multiple you'd have too loop through it, or look for other documention, or i may edit this at some point ;)
+#hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD) this returns the sub/child Unique ID
+hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+
+#print(hwndMain) #you can use this to see main/parent Unique ID
+#print(hwndChild)  #you can use this to see sub/child Unique ID
+
+#While(True) Will always run and continue to run indefinitely
+while(True):
+    #[hwndChild] this is the Unique ID of the sub/child application/proccess
+    #[win32con.WM_CHAR] This sets what PostMessage Expects for input theres KeyDown and KeyUp as well
+    #[0x44] hex code for D
+    #[0]No clue, good luck!
+    #temp = win32api.PostMessage(hwndChild, win32con.WM_CHAR, 0x44, 0) returns key sent
+    temp = win32api.PostMessage(hwndChild, win32con.WM_CHAR, 0x44, 0)
+
+    #print(temp) prints the returned value of temp, into the console
+    print(temp)
+    #sleep(1) this waits 1 second before looping through again
+    sleep(1)
+</code></pre>
+<p>I've seen posts all over to use</p>
+<pre><code>hwndEdit = win32gui.FindWindowEx(hwndMain, hwndChild, &quot;Edit&quot;, &quot;test - Notepad&quot;);
+</code></pre>
+<p>but I could never figure it out. In addition to that all documentation on Microsoft's site is vary ambiguous, So I've added my own of how I understand it.</p>
+<p>That should get you started and should be helpful for others. If anyone else had revisions let me know.</p>
+<p><a href="https://sourceforge.net/projects/pywin32/" rel="nofollow noreferrer">Win32 Python Library</a></p>

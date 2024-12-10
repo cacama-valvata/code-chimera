@@ -1,0 +1,91 @@
+<p><code>comm.Scatterv</code> and <code>comm.Gatherv</code> do not know anything about the numpy array dimensions. They just see the <code>sendbuf</code> as a block of memory. Therefore it is necessary to take this into account when specifying the <code>sendcounts</code> and <code>displacements</code> (see <a href="http://materials.jeremybejarano.com/MPIwithPython/collectiveCom.html" rel="nofollow noreferrer">http://materials.jeremybejarano.com/MPIwithPython/collectiveCom.html</a> for details). The assumption is also that the data is laid out in C-style (row major) in memory.</p>
+<p>An example for a 2D matrix is given below. The key parts of this code are to set <code>split_sizes_input</code>/<code>split_sizes_output</code> and <code>displacements_input</code>/<code>displacements_output</code> correctly. The code takes the second dimension size into account to specify the correct divisions in the memory block:</p>
+<pre><code>split_sizes_input = split_sizes*512
+</code></pre>
+<p>For higher dimensions, this line would be changed to:</p>
+<pre><code>split_sizes_input = split_sizes*indirect_dimension_sizes
+</code></pre>
+<p>where</p>
+<p><code>indirect_dimension_sizes = npts2*npts3*npts4*....*nptsN</code></p>
+<p>and likewise for <code>split_sizes_output</code>.</p>
+<p>The code creates a 2D array with the numbers 1 to 512 incrementing across one dimension. It is easy to see from the plots if the data has been split and recombined correctly.</p>
+<pre><code>import numpy as np
+from mpi4py import MPI
+import matplotlib.pyplot as plt
+
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
+
+if rank == 0:
+    test = np.arange(0,512,dtype='float64')
+    test = np.tile(test,[256,1]) #Create 2D input array. Numbers 1 to 512 increment across dimension 2.
+    outputData = np.zeros([256,512]) #Create output array of same size
+    split = np.array_split(test,size,axis = 0) #Split input array by the number of available cores
+
+    split_sizes = []
+
+    for i in range(0,len(split),1):
+        split_sizes = np.append(split_sizes, len(split[i]))
+
+    split_sizes_input = split_sizes*512
+    displacements_input = np.insert(np.cumsum(split_sizes_input),0,0)[0:-1]
+
+    split_sizes_output = split_sizes*512
+    displacements_output = np.insert(np.cumsum(split_sizes_output),0,0)[0:-1]
+
+
+    print(&quot;Input data split into vectors of sizes %s&quot; %split_sizes_input)
+    print(&quot;Input data split with displacements of %s&quot; %displacements_input)
+
+    plt.imshow(test)
+    plt.colorbar()
+    plt.title('Input data')
+    plt.show()
+
+else:
+#Create variables on other cores
+    split_sizes_input = None
+    displacements_input = None
+    split_sizes_output = None
+    displacements_output = None
+    split = None
+    test = None
+    outputData = None
+
+split = comm.bcast(split, root=0) #Broadcast split array to other cores
+split_sizes = comm.bcast(split_sizes_input, root = 0)
+displacements = comm.bcast(displacements_input, root = 0)
+split_sizes_output = comm.bcast(split_sizes_output, root = 0)
+displacements_output = comm.bcast(displacements_output, root = 0)
+
+output_chunk = np.zeros(np.shape(split[rank])) #Create array to receive subset of data on each core, where rank specifies the core
+print(&quot;Rank %d with output_chunk shape %s&quot; %(rank,output_chunk.shape))
+comm.Scatterv([test,split_sizes_input, displacements_input,MPI.DOUBLE],output_chunk,root=0)
+
+output = np.zeros([len(output_chunk),512]) #Create output array on each core
+
+for i in range(0,np.shape(output_chunk)[0],1):
+    output[i,0:512] = output_chunk[i]
+
+plt.imshow(output)
+plt.title(&quot;Output shape %s for rank %d&quot; %(output.shape,rank))
+plt.colorbar()
+plt.show()
+
+print(&quot;Output shape %s for rank %d&quot; %(output.shape,rank))
+
+comm.Barrier()
+
+comm.Gatherv(output,[outputData,split_sizes_output,displacements_output,MPI.DOUBLE], root=0) #Gather output data together
+
+
+
+if rank == 0:
+    outputData = outputData[0:len(test),:]
+    print(&quot;Final data shape %s&quot; %(outputData.shape,))
+    plt.imshow(outputData)
+    plt.colorbar()
+    plt.show()
+    print(outputData)
+</code></pre>

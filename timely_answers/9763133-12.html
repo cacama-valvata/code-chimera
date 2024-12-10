@@ -1,0 +1,12 @@
+<p>It <a href="http://docs.python.org/dev/library/ast.html#ast.literal_eval" rel="nofollow noreferrer">already exists</a>!</p>
+<pre><code>&gt;&gt;&gt; from ast import literal_eval as make_tuple
+&gt;&gt;&gt; make_tuple(&quot;(1,2,3,4,5)&quot;)
+(1, 2, 3, 4, 5)
+</code></pre>
+<p>Be aware of the corner-case, though:</p>
+<pre><code>&gt;&gt;&gt; make_tuple(&quot;(1)&quot;)
+1
+&gt;&gt;&gt; make_tuple(&quot;(1,)&quot;)
+(1,)
+</code></pre>
+<p>If your input format works different than Python here, you need to handle that case separately or use another method like <code>tuple(int(x) for x in tup_string[1:-1].split(','))</code>.</p>

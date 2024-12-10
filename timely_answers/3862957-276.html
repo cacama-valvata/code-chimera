@@ -1,0 +1,46 @@
+<p>New-style classes (i.e. subclassed from <code>object</code>, which is the default in Python 3) have a <code>__subclasses__</code> method which returns the subclasses:</p>
+<pre><code>class Foo(object): pass
+class Bar(Foo): pass
+class Baz(Foo): pass
+class Bing(Bar): pass
+</code></pre>
+<p>Here are the names of the subclasses:</p>
+<pre><code>print([cls.__name__ for cls in Foo.__subclasses__()])
+# ['Bar', 'Baz']
+</code></pre>
+<p>Here are the subclasses themselves:</p>
+<pre><code>print(Foo.__subclasses__())
+# [&lt;class '__main__.Bar'&gt;, &lt;class '__main__.Baz'&gt;]
+</code></pre>
+<p>Confirmation that the subclasses do indeed list <code>Foo</code> as their base:</p>
+<pre><code>for cls in Foo.__subclasses__():
+    print(cls.__base__)
+# &lt;class '__main__.Foo'&gt;
+# &lt;class '__main__.Foo'&gt;
+    
+</code></pre>
+<p>Note if you want subsubclasses, you'll have to recurse:</p>
+<pre><code>def all_subclasses(cls):
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)])
+
+print(all_subclasses(Foo))
+# {&lt;class '__main__.Bar'&gt;, &lt;class '__main__.Baz'&gt;, &lt;class '__main__.Bing'&gt;}
+</code></pre>
+<p>Note that if the class definition of a subclass hasn't been executed yet - for example, if the subclass's module hasn't been imported yet - then that subclass doesn't exist yet, and <code>__subclasses__</code> won't find it.</p>
+<hr />
+<p>You mentioned &quot;given its name&quot;. Since Python classes are first-class objects, you don't need to use a string with the class's name in place of the class or anything like that. You can just use the class directly, and you probably should.</p>
+<p>If you do have a string representing the name of a class and you want to find that class's subclasses, then there are two steps: find the class given its name, and then find the subclasses with <code>__subclasses__</code> as above.</p>
+<p>How to find the class from the name depends on where you're expecting to find it. If you're expecting to find it in the same module as the code that's trying to locate the class, then</p>
+<pre><code>cls = globals()[name]
+</code></pre>
+<p>would do the job, or in the unlikely case that you're expecting to find it in locals,</p>
+<pre><code>cls = locals()[name]
+</code></pre>
+<p>If the class could be in any module, then your name string should contain the fully-qualified name - something like <code>'pkg.module.Foo'</code> instead of just <code>'Foo'</code>. Use <code>importlib</code> to load the class's module, then retrieve the corresponding attribute:</p>
+<pre><code>import importlib
+modname, _, clsname = name.rpartition('.')
+mod = importlib.import_module(modname)
+cls = getattr(mod, clsname)
+</code></pre>
+<p>However you find the class, <code>cls.__subclasses__()</code> would then return a list of its subclasses.</p>

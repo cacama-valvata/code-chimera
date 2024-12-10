@@ -1,0 +1,67 @@
+<p>This:</p>
+<pre><code>def __post_init__(self):
+    super(NamedObj, self).__post_init__()
+    super(NumberedObj, self).__post_init__()
+    print(&quot;NamedAndNumbered __post_init__&quot;)
+</code></pre>
+<p>doesn't do what you think it does. <code>super(cls, obj)</code> will return a proxy to the class <strong>after</strong> <code>cls</code> in <code>type(obj).__mro__</code> - so, in your case, to <code>object</code>. And the whole point of cooperative <code>super()</code> calls is to avoid having to explicitely call each of the parents.</p>
+<p>The way cooperative <code>super()</code> calls are intended to work is, well, by being &quot;cooperative&quot; - IOW, everyone in the mro is supposed to relay the call to the next class (actually, the <code>super</code> name is a rather sad choice, as it's not about calling &quot;the super class&quot;, but about &quot;calling the next class in the mro&quot;).</p>
+<p>IOW, you want each of your &quot;composable&quot; dataclasses (which are not mixins - mixins only have behaviour) to relay the call, so you can compose them in any order. A first naive implementation would look like:</p>
+<pre><code>@dataclass
+class NamedObj:
+    name: str
+
+    def __post_init__(self):
+        super().__post_init__()
+        print(&quot;NamedObj __post_init__&quot;)
+        self.name = &quot;Name: &quot; + self.name
+
+@dataclass
+class NumberedObj:
+    number: int = 0
+
+    def __post_init__(self):
+        super().__post_init__()
+        print(&quot;NumberedObj __post_init__&quot;)
+        self.number += 1
+
+@dataclass
+class NamedAndNumbered(NumberedObj, NamedObj):
+
+    def __post_init__(self):
+        super().__post_init__()
+        print(&quot;NamedAndNumbered __post_init__&quot;)
+</code></pre>
+<p>BUT this doesn't work, since for the last class in the mro (here <code>NamedObj</code>), the next class in the mro is the builtin <code>object</code> class, which doesn't have a <code>__post_init__</code> method. The solution is simple: just add a base class that defines this method as a noop, and make all your composable dataclasses inherit from it:</p>
+<pre><code>class Base(object):
+    def __post_init__(self):
+        # just intercept the __post_init__ calls so they
+        # aren't relayed to `object`
+        pass
+
+@dataclass
+class NamedObj(Base):
+    name: str
+
+    def __post_init__(self):
+        super().__post_init__()
+        print(&quot;NamedObj __post_init__&quot;)
+        self.name = &quot;Name: &quot; + self.name
+
+@dataclass
+class NumberedObj(Base):
+    number: int = 0
+
+    def __post_init__(self):
+        super().__post_init__()
+        print(&quot;NumberedObj __post_init__&quot;)
+        self.number += 1
+
+@dataclass
+class NamedAndNumbered(NumberedObj, NamedObj):
+
+    def __post_init__(self):
+        super().__post_init__()
+        print(&quot;NamedAndNumbered __post_init__&quot;)
+        
+</code></pre>

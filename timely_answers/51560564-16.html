@@ -1,0 +1,181 @@
+<p>The main problem with the accepted <code>shlex</code> approach is that it does not ignore escape characters outside quoted substrings, and gives slightly unexpected results in some corner cases.</p>
+<p>I have the following use case, where I need a split function that splits input strings such that either single-quoted or double-quoted substrings are preserved, with the ability to escape quotes within such a substring. Quotes within an unquoted string should not be treated differently from any other character. Some example test cases with the expected output:</p>
+<pre> input string        | expected output
+===============================================
+ 'abc def'           | ['abc', 'def']
+ "abc \\s def"       | ['abc', '\\s', 'def']
+ '"abc def" ghi'     | ['abc def', 'ghi']
+ "'abc def' ghi"     | ['abc def', 'ghi']
+ '"abc \\" def" ghi' | ['abc " def', 'ghi']
+ "'abc \\' def' ghi" | ["abc ' def", 'ghi']
+ "'abc \\s def' ghi" | ['abc \\s def', 'ghi']
+ '"abc \\s def" ghi' | ['abc \\s def', 'ghi']
+ '"" test'           | ['', 'test']
+ "'' test"           | ['', 'test']
+ "abc'def"           | ["abc'def"]
+ "abc'def'"          | ["abc'def'"]
+ "abc'def' ghi"      | ["abc'def'", 'ghi']
+ "abc'def'ghi"       | ["abc'def'ghi"]
+ 'abc"def'           | ['abc"def']
+ 'abc"def"'          | ['abc"def"']
+ 'abc"def" ghi'      | ['abc"def"', 'ghi']
+ 'abc"def"ghi'       | ['abc"def"ghi']
+ "r'AA' r'.*_xyz$'"  | ["r'AA'", "r'.*_xyz$'"]</pre>
+<p>I ended up with the following function to split a string such that the expected output results for all input strings:</p>
+<pre><code>import re
+
+def quoted_split(s):
+    def strip_quotes(s):
+        if s and (s[0] == '"' or s[0] == "'") and s[0] == s[-1]:
+            return s[1:-1]
+        return s
+    return [strip_quotes(p).replace('\\"', '"').replace("\\'", "'") \
+            for p in re.findall(r'"(?:\\.|[^"])*"|\'(?:\\.|[^\'])*\'|[^\s]+', s)]
+</code></pre>
+<p>The following test application checks the results of other approaches (<code>shlex</code> and <code>csv</code> for now) and the custom split implementation:</p>
+<pre><code>#!/bin/python2.7
+
+import csv
+import re
+import shlex
+
+from timeit import timeit
+
+def test_case(fn, s, expected):
+    try:
+        if fn(s) == expected:
+            print '[ OK ] %s -> %s' % (s, fn(s))
+        else:
+            print '[FAIL] %s -> %s' % (s, fn(s))
+    except Exception as e:
+        print '[FAIL] %s -> exception: %s' % (s, e)
+
+def test_case_no_output(fn, s, expected):
+    try:
+        fn(s)
+    except:
+        pass
+
+def test_split(fn, test_case_fn=test_case):
+    test_case_fn(fn, 'abc def', ['abc', 'def'])
+    test_case_fn(fn, "abc \\s def", ['abc', '\\s', 'def'])
+    test_case_fn(fn, '"abc def" ghi', ['abc def', 'ghi'])
+    test_case_fn(fn, "'abc def' ghi", ['abc def', 'ghi'])
+    test_case_fn(fn, '"abc \\" def" ghi', ['abc " def', 'ghi'])
+    test_case_fn(fn, "'abc \\' def' ghi", ["abc ' def", 'ghi'])
+    test_case_fn(fn, "'abc \\s def' ghi", ['abc \\s def', 'ghi'])
+    test_case_fn(fn, '"abc \\s def" ghi', ['abc \\s def', 'ghi'])
+    test_case_fn(fn, '"" test', ['', 'test'])
+    test_case_fn(fn, "'' test", ['', 'test'])
+    test_case_fn(fn, "abc'def", ["abc'def"])
+    test_case_fn(fn, "abc'def'", ["abc'def'"])
+    test_case_fn(fn, "abc'def' ghi", ["abc'def'", 'ghi'])
+    test_case_fn(fn, "abc'def'ghi", ["abc'def'ghi"])
+    test_case_fn(fn, 'abc"def', ['abc"def'])
+    test_case_fn(fn, 'abc"def"', ['abc"def"'])
+    test_case_fn(fn, 'abc"def" ghi', ['abc"def"', 'ghi'])
+    test_case_fn(fn, 'abc"def"ghi', ['abc"def"ghi'])
+    test_case_fn(fn, "r'AA' r'.*_xyz$'", ["r'AA'", "r'.*_xyz$'"])
+
+def csv_split(s):
+    return list(csv.reader([s], delimiter=' '))[0]
+
+def re_split(s):
+    def strip_quotes(s):
+        if s and (s[0] == '"' or s[0] == "'") and s[0] == s[-1]:
+            return s[1:-1]
+        return s
+    return [strip_quotes(p).replace('\\"', '"').replace("\\'", "'") for p in re.findall(r'"(?:\\.|[^"])*"|\'(?:\\.|[^\'])*\'|[^\s]+', s)]
+
+if __name__ == '__main__':
+    print 'shlex\n'
+    test_split(shlex.split)
+    print
+
+    print 'csv\n'
+    test_split(csv_split)
+    print
+
+    print 're\n'
+    test_split(re_split)
+    print
+
+    iterations = 100
+    setup = 'from __main__ import test_split, test_case_no_output, csv_split, re_split\nimport shlex, re'
+    def benchmark(method, code):
+        print '%s: %.3fms per iteration' % (method, (1000 * timeit(code, setup=setup, number=iterations) / iterations))
+    benchmark('shlex', 'test_split(shlex.split, test_case_no_output)')
+    benchmark('csv', 'test_split(csv_split, test_case_no_output)')
+    benchmark('re', 'test_split(re_split, test_case_no_output)')
+</code></pre>
+<p>Output:</p>
+<pre>shlex
+
+[ OK ] abc def -> ['abc', 'def']
+[FAIL] abc \s def -> ['abc', 's', 'def']
+[ OK ] "abc def" ghi -> ['abc def', 'ghi']
+[ OK ] 'abc def' ghi -> ['abc def', 'ghi']
+[ OK ] "abc \" def" ghi -> ['abc " def', 'ghi']
+[FAIL] 'abc \' def' ghi -> exception: No closing quotation
+[ OK ] 'abc \s def' ghi -> ['abc \\s def', 'ghi']
+[ OK ] "abc \s def" ghi -> ['abc \\s def', 'ghi']
+[ OK ] "" test -> ['', 'test']
+[ OK ] '' test -> ['', 'test']
+[FAIL] abc'def -> exception: No closing quotation
+[FAIL] abc'def' -> ['abcdef']
+[FAIL] abc'def' ghi -> ['abcdef', 'ghi']
+[FAIL] abc'def'ghi -> ['abcdefghi']
+[FAIL] abc"def -> exception: No closing quotation
+[FAIL] abc"def" -> ['abcdef']
+[FAIL] abc"def" ghi -> ['abcdef', 'ghi']
+[FAIL] abc"def"ghi -> ['abcdefghi']
+[FAIL] r'AA' r'.*_xyz$' -> ['rAA', 'r.*_xyz$']
+
+csv
+
+[ OK ] abc def -> ['abc', 'def']
+[ OK ] abc \s def -> ['abc', '\\s', 'def']
+[ OK ] "abc def" ghi -> ['abc def', 'ghi']
+[FAIL] 'abc def' ghi -> ["'abc", "def'", 'ghi']
+[FAIL] "abc \" def" ghi -> ['abc \\', 'def"', 'ghi']
+[FAIL] 'abc \' def' ghi -> ["'abc", "\\'", "def'", 'ghi']
+[FAIL] 'abc \s def' ghi -> ["'abc", '\\s', "def'", 'ghi']
+[ OK ] "abc \s def" ghi -> ['abc \\s def', 'ghi']
+[ OK ] "" test -> ['', 'test']
+[FAIL] '' test -> ["''", 'test']
+[ OK ] abc'def -> ["abc'def"]
+[ OK ] abc'def' -> ["abc'def'"]
+[ OK ] abc'def' ghi -> ["abc'def'", 'ghi']
+[ OK ] abc'def'ghi -> ["abc'def'ghi"]
+[ OK ] abc"def -> ['abc"def']
+[ OK ] abc"def" -> ['abc"def"']
+[ OK ] abc"def" ghi -> ['abc"def"', 'ghi']
+[ OK ] abc"def"ghi -> ['abc"def"ghi']
+[ OK ] r'AA' r'.*_xyz$' -> ["r'AA'", "r'.*_xyz$'"]
+
+re
+
+[ OK ] abc def -> ['abc', 'def']
+[ OK ] abc \s def -> ['abc', '\\s', 'def']
+[ OK ] "abc def" ghi -> ['abc def', 'ghi']
+[ OK ] 'abc def' ghi -> ['abc def', 'ghi']
+[ OK ] "abc \" def" ghi -> ['abc " def', 'ghi']
+[ OK ] 'abc \' def' ghi -> ["abc ' def", 'ghi']
+[ OK ] 'abc \s def' ghi -> ['abc \\s def', 'ghi']
+[ OK ] "abc \s def" ghi -> ['abc \\s def', 'ghi']
+[ OK ] "" test -> ['', 'test']
+[ OK ] '' test -> ['', 'test']
+[ OK ] abc'def -> ["abc'def"]
+[ OK ] abc'def' -> ["abc'def'"]
+[ OK ] abc'def' ghi -> ["abc'def'", 'ghi']
+[ OK ] abc'def'ghi -> ["abc'def'ghi"]
+[ OK ] abc"def -> ['abc"def']
+[ OK ] abc"def" -> ['abc"def"']
+[ OK ] abc"def" ghi -> ['abc"def"', 'ghi']
+[ OK ] abc"def"ghi -> ['abc"def"ghi']
+[ OK ] r'AA' r'.*_xyz$' -> ["r'AA'", "r'.*_xyz$'"]
+
+shlex: 0.281ms per iteration
+csv: 0.030ms per iteration
+re: 0.049ms per iteration</pre>
+<p>So performance is much better than <code>shlex</code>, and can be improved further by precompiling the regular expression, in which case it will outperform the <code>csv</code> approach.</p>

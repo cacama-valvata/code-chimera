@@ -1,0 +1,30 @@
+<p>property in 2.5 support fget, fset and fdel, but not the @property.setter decorator.</p>
+<p>So, two solution:</p>
+<ol>
+<li>don't use property as a decorator but as a function;</li>
+<li>create a derivated class adding them.</li>
+</ol>
+<p>First solution:</p>
+<pre><code>class Info(object):
+    def __init__(self):
+        self._x = None
+    def get_x(self): 
+        return self._x
+    def set_x(self, value): 
+        self._x = value
+    x = property(get_x, set_x)
+</code></pre>
+<p>Second solution:</p>
+<pre><code>class _property(__builtin__.property):
+    def getter(self, fget):
+        return __builtin__.property(fget, self.fset, self.fdel)
+    def setter(self, fset):
+        return __builtin__.property(self.fget, fset, self.fdel)
+    def deleter(self, fdel):
+        return __builtin__.property(self.fget, self.fset, fdel)
+
+try:
+    property.getter
+except AttributeError:
+    property = _property
+</code></pre>

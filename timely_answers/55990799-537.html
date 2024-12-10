@@ -1,0 +1,10 @@
+<p>I will introduce <code>methodtools</code> for this use case.</p>
+<p><code>pip install methodtools</code> to install <a href="https://pypi.org/project/methodtools/" rel="nofollow noreferrer">https://pypi.org/project/methodtools/</a></p>
+<p>Then your code will work just by replacing functools to methodtools.</p>
+<pre class="lang-python prettyprint-override"><code>from methodtools import lru_cache
+class Foo:
+    @lru_cache(maxsize=16)
+    def cached_method(self, x):
+        return x + 5
+</code></pre>
+<p>Of course the gc test also returns 0 too.</p>

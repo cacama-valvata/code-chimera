@@ -1,0 +1,4 @@
+<p>I had the same error when I tried to open a csv file by pandas read_csv method.</p>
+<p>The solution was change the encoding to 'latin-1':</p>
+<pre><code>pd.read_csv('ml-100k/u.item', sep='|', names=m_cols , encoding='latin-1')
+</code></pre>

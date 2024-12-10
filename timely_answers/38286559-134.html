@@ -1,0 +1,58 @@
+<p>More examples Multiple values in <code>test.cfg</code>.</p>
+<pre><code>[test]
+foo = value1
+foo = value2
+ value3
+xxx = yyy
+</code></pre>
+<p><code>&lt;whitespace&gt;value3</code> append <code>value3</code> to foo list.</p>
+<p><code>ConfigParser</code> converts the list to a string.</p>
+<pre><code>/usr/lib/python2.7/ConfigParser.pyc in _read(self, fp, fpname)
+    552             for name, val in options.items():
+    553                 if isinstance(val, list):
+--&gt; 554                     options[name] = '\n'.join(val)
+    555 
+</code></pre>
+<p><code>value</code> before converting is always list or dict (<code>MultiOrderedDict</code>).</p>
+<p>Try this - with it, <code>config.items</code> works:</p>
+<pre><code>from collections import OrderedDict
+import ConfigParser
+
+class MultiOrderedDict(OrderedDict):
+    def __setitem__(self, key, value):
+        if key in self:
+            if isinstance(value, list):
+                self[key].extend(value)
+                return
+            elif isinstance(value,str):
+                return # ignore conversion list to string (line 554)
+        super(MultiOrderedDict, self).__setitem__(key, value)
+
+config = ConfigParser.RawConfigParser(dict_type=MultiOrderedDict)
+config.read(['test.cfg'])
+print config.get(&quot;test&quot;,  &quot;foo&quot;)
+print config.get(&quot;test&quot;,  &quot;xxx&quot;)
+print config.items(&quot;test&quot;)
+</code></pre>
+<p>Outputs:</p>
+<pre><code>['value1', 'value2', 'value3']
+['yyy']
+[('foo', ['value1', 'value2', 'value3']), ('xxx', ['yyy'])]
+</code></pre>
+<p>Another implementation <code>MultiOrderedDict</code></p>
+<pre><code>class MultiOrderedDict(OrderedDict):
+    def __setitem__(self, key, value):
+        if key in self:
+            if isinstance(value, list):
+                self[key].extend(value)
+                return
+            elif isinstance(value,str):
+                if len(self[key])&gt;1:
+                    return
+        super(MultiOrderedDict, self).__setitem__(key, value)
+</code></pre>
+<p>Outputs:</p>
+<pre><code>['value1', 'value2', 'value3']
+yyy
+[('foo', ['value1', 'value2', 'value3']), ('xxx', 'yyy')]
+</code></pre>

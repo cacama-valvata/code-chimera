@@ -1,0 +1,9 @@
+<p>On Windows (might work but untested on Linux):</p>
+<pre><code>import sys
+import os
+
+# e.g. c:\Users\dogbert\Anaconda3\envs\myenvironment
+print( sys.exec_prefix.split(os.sep)[-1] )
+</code></pre>
+<p>Answers using environment variables or assuming the path separator is &quot;/&quot; didn't work in my Windows/Anaconda3 environment.</p>
+<p>This assumes you are in an environment.</p>

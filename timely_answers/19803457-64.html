@@ -1,0 +1,51 @@
+<p>Only use the standard library</p>
+<p>Server side :</p>
+<pre><code>from SocketServer import TCPServer, ThreadingMixIn, StreamRequestHandler
+import ssl
+
+class MySSL_TCPServer(TCPServer):
+    def __init__(self,
+                 server_address,
+                 RequestHandlerClass,
+                 certfile,
+                 keyfile,
+                 ssl_version=ssl.PROTOCOL_TLSv1,
+                 bind_and_activate=True):
+        TCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.ssl_version = ssl_version
+        
+    def get_request(self):
+        newsocket, fromaddr = self.socket.accept()
+        connstream = ssl.wrap_socket(newsocket,
+                                 server_side=True,
+                                 certfile = self.certfile,
+                                 keyfile = self.keyfile,
+                                 ssl_version = self.ssl_version)
+        return connstream, fromaddr
+
+class MySSL_ThreadingTCPServer(ThreadingMixIn, MySSL_TCPServer): pass
+
+class testHandler(StreamRequestHandler):
+    def handle(self):
+        data = self.connection.recv(4096)
+        self.wfile.write(data)
+#test code
+MySSL_ThreadingTCPServer(('127.0.0.1',5151),testHandler,&quot;cert.pem&quot;,&quot;key.pem&quot;).serve_forever()
+</code></pre>
+<p>Client side :</p>
+<pre><code>import os
+import socket, ssl
+
+s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+ssl_sock = ssl.wrap_socket(s,
+                           ca_certs=&quot;cert.pem&quot;,
+                           cert_reqs=ssl.CERT_REQUIRED,
+                           ssl_version=ssl.PROTOCOL_TLSv1)
+ssl_sock.connect(('127.0.0.1',5151))
+ssl_sock.send('hello ~MySSL !')
+print ssl_sock.recv(4096)
+ssl_sock.close()
+</code></pre>
+<p>works well</p>

@@ -1,0 +1,91 @@
+<p>See <a href="https://pandas.pydata.org/docs/user_guide/io.html" rel="nofollow noreferrer">pandas: IO tools</a> for all of the available <code>.read_</code> methods.</p>
+<p>Try the following code if all of the CSV files have the same columns.</p>
+<p>I have added <code>header=0</code>, so that after reading the CSV file's first row, it can be assigned as the column names.</p>
+<pre><code>import pandas as pd
+import glob
+import os
+
+path = r'C:\DRO\DCL_rawdata_files' # use your path
+all_files = glob.glob(os.path.join(path , &quot;/*.csv&quot;))
+
+li = []
+
+for filename in all_files:
+    df = pd.read_csv(filename, index_col=None, header=0)
+    li.append(df)
+
+frame = pd.concat(li, axis=0, ignore_index=True)
+</code></pre>
+<p>Or, with attribution to a comment from <a href="https://stackoverflow.com/users/3888455/sid">Sid</a>.</p>
+<pre class="lang-python prettyprint-override"><code>all_files = glob.glob(os.path.join(path, &quot;*.csv&quot;))
+
+df = pd.concat((pd.read_csv(f) for f in all_files), ignore_index=True)
+</code></pre>
+<hr />
+<ul>
+<li>It's often necessary to identify each sample of data, which can be accomplished by adding a new column to the dataframe.</li>
+<li><a href="https://docs.python.org/3/library/pathlib.html" rel="nofollow noreferrer"><code>pathlib</code></a> from the standard library will be used for this example. It treats paths as objects with methods, instead of strings to be sliced.</li>
+</ul>
+<h3>Imports and Setup</h3>
+<pre class="lang-python prettyprint-override"><code>from pathlib import Path
+import pandas as pd
+import numpy as np
+
+path = r'C:\DRO\DCL_rawdata_files'  # or unix / linux / mac path
+
+# Get the files from the path provided in the OP
+files = Path(path).glob('*.csv')  # .rglob to get subdirectories
+</code></pre>
+<h3>Option 1:</h3>
+<ul>
+<li>Add a new column with the file name</li>
+</ul>
+<pre class="lang-python prettyprint-override"><code>dfs = list()
+for f in files:
+    data = pd.read_csv(f)
+    # .stem is method for pathlib objects to get the filename w/o the extension
+    data['file'] = f.stem
+    dfs.append(data)
+
+df = pd.concat(dfs, ignore_index=True)
+</code></pre>
+<h3>Option 2:</h3>
+<ul>
+<li>Add a new column with a generic name using <code>enumerate</code></li>
+</ul>
+<pre class="lang-python prettyprint-override"><code>dfs = list()
+for i, f in enumerate(files):
+    data = pd.read_csv(f)
+    data['file'] = f'File {i}'
+    dfs.append(data)
+
+df = pd.concat(dfs, ignore_index=True)
+</code></pre>
+<h3>Option 3:</h3>
+<ul>
+<li>Create the dataframes with a list comprehension, and then use <a href="https://numpy.org/doc/stable/reference/generated/numpy.repeat.html" rel="nofollow noreferrer"><code>np.repeat</code></a> to add a new column.
+<ul>
+<li><code>[f'S{i}' for i in range(len(dfs))]</code> creates a list of strings to name each dataframe.</li>
+<li><code>[len(df) for df in dfs]</code> creates a list of lengths</li>
+</ul>
+</li>
+<li>Attribution for this option goes to this plotting <a href="https://stackoverflow.com/a/65951915/7758804">answer</a>.</li>
+</ul>
+<pre class="lang-python prettyprint-override"><code># Read the files into dataframes
+dfs = [pd.read_csv(f) for f in files]
+
+# Combine the list of dataframes
+df = pd.concat(dfs, ignore_index=True)
+
+# Add a new column
+df['Source'] = np.repeat([f'S{i}' for i in range(len(dfs))], [len(df) for df in dfs])
+</code></pre>
+<h3>Option 4:</h3>
+<ul>
+<li>One liners using <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.assign.html" rel="nofollow noreferrer"><code>.assign</code></a> to create the new column, with attribution to a comment from <a href="https://stackoverflow.com/users/2573061/c8h10n4o2">C8H10N4O2</a></li>
+</ul>
+<pre class="lang-python prettyprint-override"><code>df = pd.concat((pd.read_csv(f).assign(filename=f.stem) for f in files), ignore_index=True)
+</code></pre>
+<p>or</p>
+<pre class="lang-python prettyprint-override"><code>df = pd.concat((pd.read_csv(f).assign(Source=f'S{i}') for i, f in enumerate(files)), ignore_index=True)
+</code></pre>

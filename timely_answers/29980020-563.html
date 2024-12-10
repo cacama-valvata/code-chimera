@@ -1,0 +1,12 @@
+<p>There is a nice online tool <a href="http://cssminifier.com/" rel="nofollow noreferrer">cssminifier</a> which has also an API which is pretty simple and easy to use.
+I made a small python script that posts the CSS file content to that tool's API, returns the minifed CSS and saves it into a file &quot;style.min.css&quot;. I like it because it is a small code that may be nicely integrated in an automated deployment script:</p>
+<pre><code>import requests
+f = open(&quot;style.css&quot;, &quot;r&quot;)
+css_text = f.read()
+f.close()
+r = requests.post(&quot;http://cssminifier.com/raw&quot;, data={&quot;input&quot;:css_text})
+css_minified = r.text
+f2 = open(&quot;style.min.css&quot;, &quot;w&quot;)
+f2.write(css_minified)
+f2.close()
+</code></pre>

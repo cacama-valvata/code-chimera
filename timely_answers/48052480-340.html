@@ -1,0 +1,15 @@
+<p>This is a simple programming concept called FLAGS. Google it a bit and you will see is quite simple.</p>
+<pre><code>all_passed = True
+# First test
+for filename in first_folder:
+
+    if &quot;Sasha Great&quot; in open(filename).read():
+        log.debug(filename + &quot; Done&quot;)
+    else:
+        print(&quot;First test failure for &quot; + filename)
+        all_passed=False
+        continue
+
+if all_passed:
+    print('All test passed')
+</code></pre>

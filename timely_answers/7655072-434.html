@@ -1,0 +1,17 @@
+<p>Have you considered using <a href="http://biopython.org/wiki/Main_Page" rel="nofollow noreferrer">BioPython</a>. They have a <a href="http://biopython.org/wiki/SeqIO" rel="nofollow noreferrer">sequence reader</a> that can read fasta files. And if you are interested in coding one yourself, you can take a look at <a href="https://github.com/biopython/biopython/blob/master/Bio/SeqIO/FastaIO.py" rel="nofollow noreferrer">BioPython's code</a>.</p>
+<p><strong>Edit</strong>: Code added</p>
+<pre><code>def read_fasta(fp):
+    name, seq = None, []
+    for line in fp:
+        line = line.rstrip()
+        if line.startswith(&quot;&gt;&quot;):
+            if name: yield (name, ''.join(seq))
+            name, seq = line, []
+        else:
+            seq.append(line)
+    if name: yield (name, ''.join(seq))
+
+with open('f.fasta') as fp:
+    for name, seq in read_fasta(fp):
+        print(name, seq)
+</code></pre>

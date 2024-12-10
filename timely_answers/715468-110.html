@@ -1,0 +1,22 @@
+<pre><code>def str2bool(v):
+  return v.lower() in (&quot;yes&quot;, &quot;true&quot;, &quot;t&quot;, &quot;1&quot;)
+</code></pre>
+<p>Then call it like so:</p>
+<pre><code>str2bool(&quot;yes&quot;)
+</code></pre>
+<p><code>&gt; True</code></p>
+<pre><code>str2bool(&quot;no&quot;)
+</code></pre>
+<p><code>&gt; False</code></p>
+<pre><code>str2bool(&quot;stuff&quot;)
+</code></pre>
+<p><code>&gt; False</code></p>
+<pre><code>str2bool(&quot;1&quot;)
+</code></pre>
+<p><code>&gt; True</code></p>
+<pre><code>str2bool(&quot;0&quot;)
+</code></pre>
+<p><code>&gt; False</code></p>
+<hr />
+<p><strong>Handling true and false explicitly:</strong></p>
+<p>You could also make your function explicitly check against a True list of words and a False list of words.  Then if it is in neither list, you could throw an exception.</p>

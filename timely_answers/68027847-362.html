@@ -1,0 +1,7 @@
+<p>I had faced similar issue, if you're reading data from csv then use the option <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#specifying-method-for-floating-point-conversion" rel="nofollow noreferrer"><code>float_precision='round_trip'</code></a> as</p>
+<p><code>pd.read_csv(resultant_file, sep='\t',float_precision='round_trip')</code></p>
+<p><a href="https://stackoverflow.com/a/36909497/6484358">It will hold of your precision, if you don't use this option it will limit the precision for speed.</a>
+-see @MarkDickinson comment.</p>
+<p>and
+if it's related to displaying data frame in jupyter notebook, then set the precision as <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/options.html#frequently-used-options" rel="nofollow noreferrer"><code>display.precision</code></a>following</p>
+<p><code>pd.set_option(&quot;precision&quot;, 20)</code></p>

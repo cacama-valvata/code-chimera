@@ -1,0 +1,10 @@
+<p><code>pip</code> contains <a href="https://github.com/pypa/pip/blob/0964c9797c1e8de901b045f66fe4d91502cc9877/pip/utils/__init__.py#L318-L324" rel="nofollow noreferrer">code</a> for this (it's used by <code>pip freeze</code> to prefix the line with <code>-e</code>). Since <code>pip</code>'s API is not guaranteed to be stable, it's best to copy the code into the own application instead of importing it from <code>pip</code>:</p>
+<pre><code>def dist_is_editable(dist):
+    &quot;&quot;&quot;Is distribution an editable install?&quot;&quot;&quot;
+    for path_item in sys.path:
+        egg_link = os.path.join(path_item, dist.project_name + '.egg-link')
+        if os.path.isfile(egg_link):
+            return True
+    return False
+</code></pre>
+<p>The code is MIT-licensed so it should be safe to copy&amp;paste into pretty much any project.</p>

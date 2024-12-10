@@ -1,0 +1,29 @@
+<p>Since <a href="https://pandas.pydata.org/pandas-docs/stable/whatsnew/v0.16.1.html#string-methods-enhancements" rel="nofollow noreferrer">version 0.16.1</a> you can just call <a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.str.strip.html" rel="nofollow noreferrer"><code>.str.strip</code></a> on the columns:</p>
+<pre><code>df.columns = df.columns.str.strip()
+</code></pre>
+<p>Here is a small example:</p>
+<pre><code>In [5]:
+df = pd.DataFrame(columns=['Year', 'Month ', 'Value'])
+print(df.columns.tolist())
+df.columns = df.columns.str.strip()
+df.columns.tolist()
+
+['Year', 'Month ', 'Value']
+Out[5]:
+['Year', 'Month', 'Value']
+</code></pre>
+<p><strong>Timings</strong></p>
+<pre><code>In[26]:
+df = pd.DataFrame(columns=[' year', ' month ', ' day', ' asdas ', ' asdas', 'as ', '  sa', ' asdas '])
+df
+Out[26]: 
+Empty DataFrame
+Columns: [ year,  month ,  day,  asdas ,  asdas, as ,   sa,  asdas ]
+
+
+%timeit df.rename(columns=lambda x: x.strip())
+%timeit df.columns.str.strip()
+1000 loops, best of 3: 293 µs per loop
+10000 loops, best of 3: 143 µs per loop
+</code></pre>
+<p>So <code>str.strip</code> is ~2X faster, I expect this to scale better for larger dfs</p>

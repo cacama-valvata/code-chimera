@@ -1,0 +1,12 @@
+<p>If you are reading a <code>csv</code> file and want to convert all empty strings to <code>nan</code> <strong>while reading the file</strong> itself then you can use the option</p>
+<pre><code>skipinitialspace=True
+</code></pre>
+<p>Example code</p>
+<pre><code>pd.read_csv('Sample.csv', skipinitialspace=True)
+</code></pre>
+<p>This will remove any white spaces that appear after the delimiters, Thus making all the empty strings as <code>nan</code></p>
+<p>From the documentation <a href="http://pandas.pydata.org/pandas-docs/stable/io.html" rel="nofollow noreferrer">http://pandas.pydata.org/pandas-docs/stable/io.html</a></p>
+<blockquote>
+<p><a href="https://i.sstatic.net/ZRaNl.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/ZRaNl.png" alt="enter image description here" /></a></p>
+</blockquote>
+<p><em><strong>Note:</strong></em> This option will remove preceding white spaces even from valid data, if for any reason you want to retain the preceding white space then this option is not a good choice.</p>

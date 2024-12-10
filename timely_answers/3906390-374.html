@@ -1,0 +1,24 @@
+<p>I had the same idea as Frédéric, but i wrote a context manager to handle replacing stdout:</p>
+<pre><code>import sys
+import StringIO
+import contextlib
+
+@contextlib.contextmanager
+def stdoutIO(stdout=None):
+    old = sys.stdout
+    if stdout is None:
+        stdout = StringIO.StringIO()
+    sys.stdout = stdout
+    yield stdout
+    sys.stdout = old
+
+code = &quot;&quot;&quot;
+i = [0,1,2]
+for j in i :
+    print j
+&quot;&quot;&quot;
+with stdoutIO() as s:
+    exec code
+
+print &quot;out:&quot;, s.getvalue()
+</code></pre>

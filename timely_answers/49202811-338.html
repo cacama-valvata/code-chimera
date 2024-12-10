@@ -1,0 +1,15 @@
+<p>I encountered same issue and found none of the answers previously provided here would work. Maybe this issue had been solved long ago to Ramnath Reddy, but I could not find the correct answer anywhere online.</p>
+<p>Luckily, I found a solution from a colleague's code by adding the following lines before <code>logging.basicConfig()</code>.</p>
+<pre class="lang-python prettyprint-override"><code># Remove all handlers associated with the root logger object.
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+</code></pre>
+<p>Try and see if it helps for whomever had the same issue.</p>
+<p><strong>Python 3.8:</strong> A new option, <code>force</code>, has been made available to automatically remove the root handlers while calling <code>basicConfig()</code>.<br />
+For example:</p>
+<pre class="lang-python prettyprint-override"><code>logging.basicConfig(filename='ramexample.log', level=logging.DEBUG, force=True)`
+</code></pre>
+<p>See <a href="https://docs.python.org/3/library/logging.html#logging.basicConfig" rel="nofollow noreferrer">logging.basicConfig</a> parameters:</p>
+<blockquote>
+<p>force: If this keyword argument is specified as true, any existing handlers attached to the root logger are removed and closed, before carrying out the configuration as specified by the other arguments.</p>
+</blockquote>

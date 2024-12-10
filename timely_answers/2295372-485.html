@@ -1,0 +1,8 @@
+<p>you may force the capture of a variable using an argument with a default value:</p>
+<pre><code>&gt;&gt;&gt; for i in [0,1,2,3]:
+...    adders[i]=lambda a,i=i: i+a  # note the dummy parameter with a default value
+...
+&gt;&gt;&gt; print( adders[1](3) )
+4
+</code></pre>
+<p>the idea is to declare a parameter (cleverly named <code>i</code>) and give it a default value of the variable you want to capture (the value of  <code>i</code>)</p>

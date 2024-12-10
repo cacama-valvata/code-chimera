@@ -1,0 +1,24 @@
+<p>The Fibonacci sphere algorithm is great for this. It is fast and gives results that at a glance will easily fool the human eye. <a href="http://www.openprocessing.org/sketch/41142" rel="nofollow noreferrer">You can see an example done with processing</a> which will show the result over time as points are added. <a href="https://www.vertexshaderart.com/art/79HqSrQH4meL63aAo/revision/9c9YN5LwBQKLDa4Aa" rel="nofollow noreferrer">Here's another great interactive example</a> made by @gman. And here's a simple implementation in python.</p>
+<pre><code>import math
+
+
+def fibonacci_sphere(samples=1):
+
+    points = []
+    phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
+
+    for i in range(samples):
+        y = 1 - (i / float(samples - 1)) * 2  # y goes from 1 to -1
+        radius = math.sqrt(1 - y * y)  # radius at y
+
+        theta = phi * i  # golden angle increment
+
+        x = math.cos(theta) * radius
+        z = math.sin(theta) * radius
+
+        points.append((x, y, z))
+
+    return points
+</code></pre>
+<p>1000 samples gives you this:</p>
+<p><img src="https://i.sstatic.net/NsCif.png" alt="enter image description here" /></p>

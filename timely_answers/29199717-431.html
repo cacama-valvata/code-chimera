@@ -1,0 +1,20 @@
+<p>If you go to the URL for the tag object (<a href="https://api.github.com/repos/ramda/ramda/git/tags/c71639093b1a433fa68d4df2056be32a635a56d5" rel="nofollow noreferrer">https://api.github.com/repos/ramda/ramda/git/tags/c71639093b1a433fa68d4df2056be32a635a56d5</a>) Included in the json response for the tag ref, you get:</p>
+<pre><code>{
+  &quot;sha&quot;: &quot;c71639093b1a433fa68d4df2056be32a635a56d5&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/ramda/ramda/git/tags/c71639093b1a433fa68d4df2056be32a635a56d5&quot;,
+  &quot;tagger&quot;: {
+    &quot;name&quot;: &quot;buzzdecafe&quot;,
+    &quot;email&quot;: &quot;m_hur@yahoo.com&quot;,
+    &quot;date&quot;: &quot;2015-03-21T22:25:46Z&quot;
+  },
+  &quot;object&quot;: {
+    &quot;sha&quot;: &quot;e2fad9bc6dd425a00dd98d2fb7ab1a9c52fce074&quot;,
+    &quot;type&quot;: &quot;commit&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/repos/ramda/ramda/git/commits/e2fad9bc6dd425a00dd98d2fb7ab1a9c52fce074&quot;
+  },
+  &quot;tag&quot;: &quot;v0.12.0&quot;,
+  &quot;message&quot;: &quot;Version 0.12.0\n&quot;
+}
+</code></pre>
+<p>Which has the SHA1 of the commit object you're looking for (<code>e2fad9bc6dd425a00dd98d2fb7ab1a9c52fce074</code>) as <code>object.sha</code></p>
+<p>Git actually has two kinds of tags: lightweight tags and annotated tags. The lightweight ones are just refs that point directly to the commit sha. An annotated tag is actually an object with its own sha, which has a pointer to the commit sha. This is an example of the second kind of tag. (See <code>man git-tag</code> for a bit more detail)</p>

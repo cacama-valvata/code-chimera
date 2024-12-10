@@ -1,0 +1,197 @@
+<h1>TLDR; Use StereoSGBM (Semi Global Block Matching) for images with smoother edges and use some post filtering if you want it even smoother</h1>
+<p>OP didn't provide original images, so I'm using <code>Tsukuba</code> from the <a href="https://vision.middlebury.edu/stereo/data/" rel="nofollow noreferrer"> Middlebury data set</a>.</p>
+<h3>Result with regular StereoBM</h3>
+<p><a href="https://i.sstatic.net/9P5Ux.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/9P5Ux.png" alt="stereobm" /></a></p>
+<h3>Result with StereoSGBM (tuned)</h3>
+<p><a href="https://i.sstatic.net/xs2Kf.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/xs2Kf.png" alt="stereosgbm" /></a></p>
+<h3>Best result I could find in literature</h3>
+<p><a href="https://i.sstatic.net/KXS1o.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/KXS1o.png" alt="enter image description here" /></a></p>
+<p>See the publication <a href="https://www.researchgate.net/publication/221415973_Simple_but_Effective_Tree_Structures_for_Dynamic_Programming-Based_Stereo_Matching" rel="nofollow noreferrer">here</a> for details.</p>
+<h3>Example of post filtering (see link below)</h3>
+<p><a href="https://i.sstatic.net/GKRbP.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/GKRbP.png" alt="post filter example" /></a></p>
+<h1>Theory/Other considerations from OP's question</h1>
+<p>The large black areas of your calibrated rectified images would lead me to believe that for those, calibration was not done very well. There's a variety of reasons that could be at play, maybe the physical setup, maybe lighting when you did calibration, etc., but there are plenty of camera calibration tutorials out there for that and my understanding is that you are asking for a way to get a better depth map from an uncalibrated setup (this isn't 100% clear, but the title seems to support this and I think that's what people will come here to try to find).</p>
+<p>Your basic approach is correct, but the results can definitely be improved. This form of depth mapping is not among those that produce the highest quality maps (especially being uncalibrated). The biggest improvement will likely come from using a different stereo matching algorithm. The lighting may also be having a significant effect. The right image (at least to my naked eye) appears to be less well lit which could interfere with the reconstruction. You could first try brightening it to the same level as the other, or gather new images if that is possible. From here out, I'll assume you have no access to the original cameras, so I'll consider gathering new images, altering the setup, or performing calibration to be out of scope. (If you do have access to the setup and cameras, then I would suggest checking calibration and using a calibrated method as this will work better).</p>
+<p>You used <code>StereoBM</code> for calculating your disparity (depth map) which does work, but <code>StereoSGBM</code> is much better suited for this application (it handles smoother edges better). You can see the difference below.</p>
+<p><a href="https://medium.com/@omar.ps16/stereo-3d-reconstruction-with-opencv-using-an-iphone-camera-part-iii-95460d3eddf0" rel="nofollow noreferrer">This article</a> explains the differences in more depth:</p>
+<blockquote>
+<p>Block matching focuses on high texture images (think a picture of a tree) and semi-global block matching will focus on sub pixel level matching and pictures with more smooth textures (think a picture of a hallway).</p>
+</blockquote>
+<p>Without any explicit intrinsic camera parameters, specifics about the camera setup (like focal distance, distance between the cameras, distance to the subject, etc.), a known dimension in the image, or motion (to use <a href="https://docs.opencv.org/master/de/d7c/tutorial_table_of_content_sfm.html" rel="nofollow noreferrer">structure from motion</a>), you can only obtain 3D reconstruction up to a projective transform; you won't have a sense of scale or necessarily rotation either, but you can still generate a relative depth map. You will likely suffer from some barrel and other distortions which could be removed with proper camera calibration, but you can get reasonable results without it as long as the cameras aren’t terrible (lens system isn't too distorted) and are set up pretty close to <a href="https://www.researchgate.net/figure/Canonical-stereo-configuration-with-parallel-optical-axes_fig1_252293461" rel="nofollow noreferrer">canonical configuration</a> (which basically means they are oriented such that their optical axes are as close to parallel as possible, and their fields of view overlap sufficiently). This doesn't however appear to be the OPs issue as he did manage to get alright rectified images with the uncalibrated method.</p>
+<h1>Basic Procedure</h1>
+<ol>
+<li>Find at least 5 well-matched points in both images you can use to calculate the Fundamental Matrix (you can use any detector and matcher you like, I kept FLANN but used ORB to do detection as SIFT isn't in the main version of OpenCV for 4.2.0)</li>
+<li>Calculate the Fundamental Matrix, F, with <code>findFundamentalMat</code></li>
+<li>Undistort your images with <code>stereoRectifyUncalibrated</code> and <code>warpPerspective</code></li>
+<li>Calculate Disparity (Depth Map) with <code>StereoSGBM</code></li>
+</ol>
+<p>The results are much better:</p>
+<h2>Matches with ORB and FLANN</h2>
+<p><a href="https://i.sstatic.net/AhFy7.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/AhFy7.png" alt="Matches" /></a></p>
+<h2>Undistorted images (left, then right)</h2>
+<p><a href="https://i.sstatic.net/5RKjB.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/5RKjB.png" alt="undistorted left" /></a><br />
+<a href="https://i.sstatic.net/lRYXj.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/lRYXj.png" alt="undistorted right" /></a></p>
+<h2>Disparity</h2>
+<h3>StereoBM</h3>
+<p>This result looks similar to the OPs problems (speckling, gaps, wrong depths in some areas).</p>
+<p><a href="https://i.sstatic.net/9P5Ux.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/9P5Ux.png" alt="stereobm" /></a></p>
+<h3>StereoSGBM (tuned)</h3>
+<p>This result looks much better and uses roughly the same method as the OP, minus the final disparity calculation, making me think the OP would see similar improvements on his images, had they been provided.</p>
+<p><a href="https://i.sstatic.net/xs2Kf.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/xs2Kf.png" alt="stereosgbm" /></a></p>
+<h1>Post filtering</h1>
+<p>There's <a href="https://docs.opencv.org/4.2.0/d3/d14/tutorial_ximgproc_disparity_filtering.html" rel="nofollow noreferrer">a good article about this</a> in the OpenCV docs. I'd recommend looking at it if you need really smooth maps.</p>
+<p>The example photos above are frame 1 from the scene <code>ambush_2</code> in the <a href="http://sintel.is.tue.mpg.de/stereo" rel="nofollow noreferrer">MPI Sintel Dataset</a>.</p>
+<p><a href="https://i.sstatic.net/GKRbP.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/GKRbP.png" alt="post filter example" /></a></p>
+<h1>Full code (Tested on OpenCV 4.2.0):</h1>
+<pre><code>import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+imgL = cv2.imread(&quot;tsukuba_l.png&quot;, cv2.IMREAD_GRAYSCALE)  # left image
+imgR = cv2.imread(&quot;tsukuba_r.png&quot;, cv2.IMREAD_GRAYSCALE)  # right image
+
+
+def get_keypoints_and_descriptors(imgL, imgR):
+    &quot;&quot;&quot;Use ORB detector and FLANN matcher to get keypoints, descritpors,
+    and corresponding matches that will be good for computing
+    homography.
+    &quot;&quot;&quot;
+    orb = cv2.ORB_create()
+    kp1, des1 = orb.detectAndCompute(imgL, None)
+    kp2, des2 = orb.detectAndCompute(imgR, None)
+
+    ############## Using FLANN matcher ##############
+    # Each keypoint of the first image is matched with a number of
+    # keypoints from the second image. k=2 means keep the 2 best matches
+    # for each keypoint (best matches = the ones with the smallest
+    # distance measurement).
+    FLANN_INDEX_LSH = 6
+    index_params = dict(
+        algorithm=FLANN_INDEX_LSH,
+        table_number=6,  # 12
+        key_size=12,  # 20
+        multi_probe_level=1,
+    )  # 2
+    search_params = dict(checks=50)  # or pass empty dictionary
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+    flann_match_pairs = flann.knnMatch(des1, des2, k=2)
+    return kp1, des1, kp2, des2, flann_match_pairs
+
+
+def lowes_ratio_test(matches, ratio_threshold=0.6):
+    &quot;&quot;&quot;Filter matches using the Lowe's ratio test.
+
+    The ratio test checks if matches are ambiguous and should be
+    removed by checking that the two distances are sufficiently
+    different. If they are not, then the match at that keypoint is
+    ignored.
+
+    https://stackoverflow.com/questions/51197091/how-does-the-lowes-ratio-test-work
+    &quot;&quot;&quot;
+    filtered_matches = []
+    for m, n in matches:
+        if m.distance &lt; ratio_threshold * n.distance:
+            filtered_matches.append(m)
+    return filtered_matches
+
+
+def draw_matches(imgL, imgR, kp1, des1, kp2, des2, flann_match_pairs):
+    &quot;&quot;&quot;Draw the first 8 mathces between the left and right images.&quot;&quot;&quot;
+    # https://docs.opencv.org/4.2.0/d4/d5d/group__features2d__draw.html
+    # https://docs.opencv.org/2.4/modules/features2d/doc/common_interfaces_of_descriptor_matchers.html
+    img = cv2.drawMatches(
+        imgL,
+        kp1,
+        imgR,
+        kp2,
+        flann_match_pairs[:8],
+        None,
+        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+    )
+    cv2.imshow(&quot;Matches&quot;, img)
+    cv2.imwrite(&quot;ORB_FLANN_Matches.png&quot;, img)
+    cv2.waitKey(0)
+
+
+def compute_fundamental_matrix(matches, kp1, kp2, method=cv2.FM_RANSAC):
+    &quot;&quot;&quot;Use the set of good mathces to estimate the Fundamental Matrix.
+
+    See  https://en.wikipedia.org/wiki/Eight-point_algorithm#The_normalized_eight-point_algorithm
+    for more info.
+    &quot;&quot;&quot;
+    pts1, pts2 = [], []
+    fundamental_matrix, inliers = None, None
+    for m in matches[:8]:
+        pts1.append(kp1[m.queryIdx].pt)
+        pts2.append(kp2[m.trainIdx].pt)
+    if pts1 and pts2:
+        # You can play with the Threshold and confidence values here
+        # until you get something that gives you reasonable results. I
+        # used the defaults
+        fundamental_matrix, inliers = cv2.findFundamentalMat(
+            np.float32(pts1),
+            np.float32(pts2),
+            method=method,
+            # ransacReprojThreshold=3,
+            # confidence=0.99,
+        )
+    return fundamental_matrix, inliers, pts1, pts2
+
+
+############## Find good keypoints to use ##############
+kp1, des1, kp2, des2, flann_match_pairs = get_keypoints_and_descriptors(imgL, imgR)
+good_matches = lowes_ratio_test(flann_match_pairs, 0.2)
+draw_matches(imgL, imgR, kp1, des1, kp2, des2, good_matches)
+
+
+############## Compute Fundamental Matrix ##############
+F, I, points1, points2 = compute_fundamental_matrix(good_matches, kp1, kp2)
+
+
+############## Stereo rectify uncalibrated ##############
+h1, w1 = imgL.shape
+h2, w2 = imgR.shape
+thresh = 0
+_, H1, H2 = cv2.stereoRectifyUncalibrated(
+    np.float32(points1), np.float32(points2), F, imgSize=(w1, h1), threshold=thresh,
+)
+
+############## Undistort (Rectify) ##############
+imgL_undistorted = cv2.warpPerspective(imgL, H1, (w1, h1))
+imgR_undistorted = cv2.warpPerspective(imgR, H2, (w2, h2))
+cv2.imwrite(&quot;undistorted_L.png&quot;, imgL_undistorted)
+cv2.imwrite(&quot;undistorted_R.png&quot;, imgR_undistorted)
+
+############## Calculate Disparity (Depth Map) ##############
+
+# Using StereoBM
+stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
+disparity_BM = stereo.compute(imgL_undistorted, imgR_undistorted)
+plt.imshow(disparity_BM, &quot;gray&quot;)
+plt.colorbar()
+plt.show()
+
+# Using StereoSGBM
+# Set disparity parameters. Note: disparity range is tuned according to
+#  specific parameters obtained through trial and error.
+win_size = 2
+min_disp = -4
+max_disp = 9
+num_disp = max_disp - min_disp  # Needs to be divisible by 16
+stereo = cv2.StereoSGBM_create(
+    minDisparity=min_disp,
+    numDisparities=num_disp,
+    blockSize=5,
+    uniquenessRatio=5,
+    speckleWindowSize=5,
+    speckleRange=5,
+    disp12MaxDiff=2,
+    P1=8 * 3 * win_size ** 2,
+    P2=32 * 3 * win_size ** 2,
+)
+disparity_SGBM = stereo.compute(imgL_undistorted, imgR_undistorted)
+plt.imshow(disparity_SGBM, &quot;gray&quot;)
+plt.colorbar()
+plt.show()
+
+</code></pre>

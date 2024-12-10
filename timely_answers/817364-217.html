@@ -1,0 +1,44 @@
+<p>In your <code>save</code> you have to have the argument <code>commit</code>. If anything overrides your form, or wants to modify what it's saving, it will do <code>save(commit=False)</code>, modify the output, and then save it itself.</p>
+<p>Also, your ModelForm should return the model it's saving. Usually a ModelForm's <code>save</code> will look something like:</p>
+<pre><code>def save(self, commit=True):
+    m = super(CallResultTypeForm, self).save(commit=False)
+    # do custom stuff
+    if commit:
+        m.save()
+    return m
+</code></pre>
+<p>Read up on <a href="http://docs.djangoproject.com/en/dev/topics/forms/modelforms/#the-save-method" rel="nofollow noreferrer">the <code>save</code> method</a>.</p>
+<p>Finally, a lot of this ModelForm won't work just because of the way you are accessing things. Instead of <code>self.callResult</code>, you need to use <code>self.fields['callResult']</code>.</p>
+<p><em>UPDATE</em>: In response to your answer:</p>
+<p><em>Aside:</em> Why not just use <code>ManyToManyField</code>s in the Model so you don't have to do this? Seems like you're storing redundant data and making more work for yourself (and me <code>:P</code>).</p>
+<pre><code>from django.db.models import AutoField  
+def copy_model_instance(obj):  
+    &quot;&quot;&quot;
+    Create a copy of a model instance. 
+    M2M relationships are currently not handled, i.e. they are not copied. (Fortunately, you don't have any in this case)
+    See also Django #4027. From http://blog.elsdoerfer.name/2008/09/09/making-a-copy-of-a-model-instance/
+    &quot;&quot;&quot;  
+    initial = dict([(f.name, getattr(obj, f.name)) for f in obj._meta.fields if not isinstance(f, AutoField) and not f in obj._meta.parents.values()])  
+    return obj.__class__(**initial)  
+
+class CallResultTypeForm(ModelForm):
+    callResult = ModelMultipleChoiceField(queryset=CallResult.objects.all())
+    campaign = ModelMultipleChoiceField(queryset=Campaign.objects.all())
+    callType = ModelMultipleChoiceField(queryset=CallType.objects.all())
+
+    def save(self, commit=True, *args, **kwargs):
+        m = super(CallResultTypeForm, self).save(commit=False, *args, **kwargs)
+        results = []
+        for cr in self.callResult:
+            for c in self.campain:
+                for ct in self.callType:
+                    m_new = copy_model_instance(m)
+                    m_new.callResult = cr
+                    m_new.campaign = c
+                    m_new.calltype = ct
+                    if commit:
+                        m_new.save()
+                    results.append(m_new)
+         return results
+</code></pre>
+<p>This allows for inheritance of <code>CallResultTypeForm</code>, just in case that's ever necessary.</p>

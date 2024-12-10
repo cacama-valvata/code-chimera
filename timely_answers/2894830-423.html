@@ -1,0 +1,4 @@
+<p>Contrary to popular belief, newer versions of sqlite3 <strong>do</strong> support access from multiple threads.</p>
+<p>This can be enabled via optional keyword argument <code>check_same_thread</code>:</p>
+<pre><code>sqlite.connect(&quot;:memory:&quot;, check_same_thread=False)
+</code></pre>

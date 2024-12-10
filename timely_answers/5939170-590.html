@@ -1,0 +1,45 @@
+<p>You need to edit <code>Modules/Setup.dist</code> to specify the location of OpenSSL if it is not in the standard location. From <a href="http://paltman.com/2007/nov/15/getting-ssl-support-in-python-251/" rel="nofollow noreferrer">Getting SSL Support in Python 2.5.1</a>:</p>
+<blockquote>
+<p>If you find yourself on a linux box needing ssl support in python (to
+use a client in things like httplib.HTTPSConnection or
+imaplib.IMAP4_SSL), then let me save you a couple of hours of hunting
+around the web (of course if you have found this then that means
+you've done some level hunting already!).</p>
+<p>You'll know if you need ssl support compiled into your python
+installation if you get the following exception message:
+AttributeError: 'module' object has no attribute 'ssl'</p>
+<p>In order to make that go away so you can continue happily slinging
+python code, you'll need to first make sure you have OpenSSL
+installed. By default it is installed from source at: /usr/local/ssl</p>
+<p>If that directory doesn't exist, then grab the source package.</p>
+<p>Do the standard:</p>
+<pre><code>tar zxf openssl-0.9.8g.tar.gz
+cd openssl-0.9.8g
+./config
+make
+make install
+</code></pre>
+<p>Then grab the python sources for 2.5.1 and: tar zxf Python-2.5.1.tgz
+&amp;&amp; cd Python-2.5.1</p>
+<p>Then you need to edit the Modules/Setup.dist:</p>
+<pre><code>204:# Socket module helper for SSL support; you must comment out the other
+205:# socket line above, and possibly edit the SSL variable:
+206:SSL=/usr/local/ssl
+207:_ssl _ssl.c \
+208:    -DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
+209:    -L$(SSL)/lib -lssl -lcrypto
+</code></pre>
+<p>If you installed OpenSSL in the default locations you can just
+uncomment lines 206-209, then:</p>
+<pre><code>./configure
+make
+make install
+</code></pre>
+<p>Then verify your installation with:</p>
+<pre><code>python /usr/local/lib/python2.5/test/test_socket_ssl.py
+test_rude_shutdown ...
+test_basic ...
+test_timeout ...
+</code></pre>
+</blockquote>
+<p>Make sure the changes to <code>Modules/Setup.dist</code> get picked up by cleaning the source root (e.g. <code>make distclean</code>) and run <code>configure </code> and <code>make</code> again.</p>

@@ -1,0 +1,30 @@
+<p>If the real case is just like the example</p>
+<p>Try something like this:</p>
+<pre><code>from bs4 import BeautifulSoup
+&gt;&gt;&gt; html = &quot;&quot;&quot;&lt;div class=&quot;price&quot;&gt;
+
+ &lt;p class=&quot;top&quot;&gt;
+     &lt;strong&gt;First listed&lt;/strong&gt;&lt;br&gt;
+             800 on
+ &lt;/p&gt;
+ &lt;p class=&quot;top&quot;&gt;
+     &lt;strong&gt;First listed&lt;/strong&gt;&lt;br&gt;
+             900 on
+ &lt;/p&gt;
+ &lt;p class=&quot;top&quot;&gt;
+     &lt;strong&gt;First listed&lt;/strong&gt;&lt;br&gt;
+             1000 on
+ &lt;/p&gt;
+
+ &lt;/div&gt;&quot;&quot;&quot;
+&gt;&gt;&gt; soup = BeautifulSoup(html)
+&gt;&gt;&gt; div = soup.find_all('div', class_'price')
+&gt;&gt;&gt; for p_tag in div:
+&quot;&quot;&quot; will search for all p tags in the div&quot;&quot;&quot;
+...    p = p_tag.find('p', class_='top').text.split()[-2] 
+&quot;&quot;&quot; will split the example with spaces and will make a list of result. if you want only the 800 use [-2]&quot;&quot;&quot; 
+...    print(p)        
+# 800
+# 900
+# 1000
+</code></pre>

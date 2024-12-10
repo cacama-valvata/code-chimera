@@ -1,0 +1,13 @@
+<p>You'd use <a href="https://docs.python.org/3/library/urllib.request.html#urllib.request.urlretrieve" rel="nofollow noreferrer"><code>urllib.request.urlretrieve</code></a>.  Note that this function &quot;may become deprecated at some point in the future&quot;, so you might be better off using the less likely to be deprecated interface:</p>
+<pre><code># Adapted from the source:
+# https://hg.python.org/cpython/file/3.5/Lib/urllib/request.py#l170
+with open(filename, 'wb') as out_file:
+    with contextlib.closing(urllib.request.urlopen(url)) as fp:
+        block_size = 1024 * 8
+        while True:
+            block = fp.read(block_size)
+            if not block:
+                break
+            out_file.write(block)
+</code></pre>
+<p>For small enough files, you could just <code>read</code> and <code>write</code> the whole thing and drop the loop entirely.</p>

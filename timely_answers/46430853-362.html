@@ -1,0 +1,9 @@
+<p>Shamelessly stolen from <a href="https://stackoverflow.com/questions/43096522/remove-dollar-sign-from-entire-python-pandas-dataframe">this answer</a>... <em>but</em>, that answer is only about changing one character and doesn't complete the coolness: since it takes a dictionary, you can replace any number of characters at once, as well as in any number of columns.</p>
+<pre><code># if you want to operate on multiple columns, put them in a list like so:
+cols = ['col1', 'col2', ..., 'colN']
+
+# pass them to df.replace(), specifying each char and it's replacement:
+df[cols] = df[cols].replace({'\$': '', ',': ''}, regex=True)
+</code></pre>
+<p>@shivsn caught that you need to use <code>regex=True</code>; you already knew about replace (but also didn't show trying to use it on multiple columns or both the dollar sign and comma simultaneously).</p>
+<p>This answer is simply spelling out the details I found from others in one place for those like me (e.g. noobs to <code>python</code> an <code>pandas</code>). Hope it's helpful.</p>

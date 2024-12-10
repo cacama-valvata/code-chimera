@@ -1,0 +1,143 @@
+<p>This questions appears in quite a few SO discussions:</p>
+<ul>
+<li><a href="http://stackoverflow.com/questions/1168260/algorithm-for-generating-unique-colors">http://stackoverflow.com/questions/1168260/algorithm-for-generating-unique-colors</a></li>
+<li><a href="http://stackoverflow.com/questions/773226/generate-unique-colours">http://stackoverflow.com/questions/773226/generate-unique-colours</a></li>
+<li><a href="http://stackoverflow.com/questions/309149/generate-distinctly-different-rgb-colors-in-graphs">http://stackoverflow.com/questions/309149/generate-distinctly-different-rgb-colors-in-graphs</a></li>
+<li><a href="http://stackoverflow.com/questions/2328339/how-to-generate-n-different-colors-for-any-natural-number-n">http://stackoverflow.com/questions/2328339/how-to-generate-n-different-colors-for-any-natural-number-n</a></li>
+</ul>
+<p>Different solutions are proposed, but none are optimal. Luckily, <em>science</em> comes to the rescue</p>
+<p><strong>Arbitrary N</strong></p>
+<ul>
+<li><a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.65.2790" rel="nofollow noreferrer">Colour displays for categorical images</a> (free download)</li>
+<li><a href="http://icaci.org/documents/ICC_proceedings/ICC2009/html/nonref/13_18.pdf" rel="nofollow noreferrer">A WEB SERVICE TO PERSONALISE MAP COLOURING</a> (free download, a webservice solution should be available by next month)</li>
+<li><a href="http://onlinelibrary.wiley.com/doi/10.1002/%28SICI%291520-6378%28199904%2924:2%3C132::AID-COL8%3E3.0.CO;2-B/abstract" rel="nofollow noreferrer">An Algorithm for the Selection of High-Contrast Color Sets</a> (the authors offer a free C++ implementation)</li>
+<li><a href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-21-16-2936" rel="nofollow noreferrer">High-contrast sets of colors</a> (The first algorithm for the problem)</li>
+</ul>
+<p>The last 2 will be free via most university libraries / proxies.</p>
+<p><strong>N is finite and relatively small</strong></p>
+<p>In this case, one could go for a list solution. A very interesting article in the subject is freely available:</p>
+<ul>
+<li><a href="http://eleanormaclure.files.wordpress.com/2011/03/colour-coding.pdf" rel="nofollow noreferrer">A Colour Alphabet and the Limits of Colour Coding</a></li>
+</ul>
+<p>There are several color lists to consider:</p>
+<ul>
+<li>Boynton's list of 11 colors that are almost never confused (available in the first paper of the previous section)</li>
+<li>Kelly's 22 colors of maximum contrast (available in the paper above)</li>
+</ul>
+<p>I also ran into <a href="http://web.media.mit.edu/%7Ewad/color/palette.html" rel="nofollow noreferrer">this</a> Palette by an MIT student.
+Lastly, The following links may be useful in converting between different color systems / coordinates (some colors in the articles are not specified in RGB, for instance):</p>
+<ul>
+<li><a href="http://chem8.org/uch/space-55036-do-blog-id-5333.html" rel="nofollow noreferrer">http://chem8.org/uch/space-55036-do-blog-id-5333.html</a></li>
+<li><a href="https://metacpan.org/pod/Color::Library::Dictionary::NBS_ISCC" rel="nofollow noreferrer">https://metacpan.org/pod/Color::Library::Dictionary::NBS_ISCC</a></li>
+<li><a href="http://stackoverflow.com/questions/3620663/color-theory-how-to-convert-munsell-hvc-to-rgb-hsb-hsl/4353544#4353544">http://stackoverflow.com/questions/3620663/color-theory-how-to-convert-munsell-hvc-to-rgb-hsb-hsl/4353544#4353544</a></li>
+</ul>
+<p>For Kelly's and Boynton's list, I've already made the conversion to RGB. Some C# code:</p>
+
+<pre class="lang-cs prettyprint-override"><code>public static ReadOnlyCollection&lt;Color&gt; KellysMaxContrastSet
+{
+    get { return _kellysMaxContrastSet.AsReadOnly(); }
+}
+
+private static readonly List&lt;Color&gt; _kellysMaxContrastSet = new List&lt;Color&gt;
+{
+    UIntToColor(0xFFFFB300), //Vivid Yellow
+    UIntToColor(0xFF803E75), //Strong Purple
+    UIntToColor(0xFFFF6800), //Vivid Orange
+    UIntToColor(0xFFA6BDD7), //Very Light Blue
+    UIntToColor(0xFFC10020), //Vivid Red
+    UIntToColor(0xFFCEA262), //Grayish Yellow
+    UIntToColor(0xFF817066), //Medium Gray
+                          
+    //The following will not be good for people with defective color vision
+    UIntToColor(0xFF007D34), //Vivid Green
+    UIntToColor(0xFFF6768E), //Strong Purplish Pink
+    UIntToColor(0xFF00538A), //Strong Blue
+    UIntToColor(0xFFFF7A5C), //Strong Yellowish Pink
+    UIntToColor(0xFF53377A), //Strong Violet
+    UIntToColor(0xFFFF8E00), //Vivid Orange Yellow
+    UIntToColor(0xFFB32851), //Strong Purplish Red
+    UIntToColor(0xFFF4C800), //Vivid Greenish Yellow
+    UIntToColor(0xFF7F180D), //Strong Reddish Brown
+    UIntToColor(0xFF93AA00), //Vivid Yellowish Green
+    UIntToColor(0xFF593315), //Deep Yellowish Brown
+    UIntToColor(0xFFF13A13), //Vivid Reddish Orange
+    UIntToColor(0xFF232C16), //Dark Olive Green
+};
+
+public static ReadOnlyCollection&lt;Color&gt; BoyntonOptimized
+{
+    get { return _boyntonOptimized.AsReadOnly(); }
+}
+
+private static readonly List&lt;Color&gt; _boyntonOptimized = new List&lt;Color&gt;
+{
+    Color.FromArgb(0, 0, 255),      //Blue
+    Color.FromArgb(255, 0, 0),      //Red
+    Color.FromArgb(0, 255, 0),      //Green
+    Color.FromArgb(255, 255, 0),    //Yellow
+    Color.FromArgb(255, 0, 255),    //Magenta
+    Color.FromArgb(255, 128, 128),  //Pink
+    Color.FromArgb(128, 128, 128),  //Gray
+    Color.FromArgb(128, 0, 0),      //Brown
+    Color.FromArgb(255, 128, 0),    //Orange
+};
+
+static public Color UIntToColor(uint color)
+{
+    var a = (byte)(color &gt;&gt; 24);
+    var r = (byte)(color &gt;&gt; 16);
+    var g = (byte)(color &gt;&gt; 8);
+    var b = (byte)(color &gt;&gt; 0);
+    return Color.FromArgb(a, r, g, b);
+}
+</code></pre>
+<p>And here are the RGB values in hex and 8-bit-per-channel representations:</p>
+
+<pre class="lang-none prettyprint-override"><code>kelly_colors_hex = [
+    0xFFB300, # Vivid Yellow
+    0x803E75, # Strong Purple
+    0xFF6800, # Vivid Orange
+    0xA6BDD7, # Very Light Blue
+    0xC10020, # Vivid Red
+    0xCEA262, # Grayish Yellow
+    0x817066, # Medium Gray
+
+    # The following don't work well for people with defective color vision
+    0x007D34, # Vivid Green
+    0xF6768E, # Strong Purplish Pink
+    0x00538A, # Strong Blue
+    0xFF7A5C, # Strong Yellowish Pink
+    0x53377A, # Strong Violet
+    0xFF8E00, # Vivid Orange Yellow
+    0xB32851, # Strong Purplish Red
+    0xF4C800, # Vivid Greenish Yellow
+    0x7F180D, # Strong Reddish Brown
+    0x93AA00, # Vivid Yellowish Green
+    0x593315, # Deep Yellowish Brown
+    0xF13A13, # Vivid Reddish Orange
+    0x232C16, # Dark Olive Green
+    ]
+
+kelly_colors = dict(vivid_yellow=(255, 179, 0),
+                    strong_purple=(128, 62, 117),
+                    vivid_orange=(255, 104, 0),
+                    very_light_blue=(166, 189, 215),
+                    vivid_red=(193, 0, 32),
+                    grayish_yellow=(206, 162, 98),
+                    medium_gray=(129, 112, 102),
+                    
+                    # these aren't good for people with defective color vision:
+                    vivid_green=(0, 125, 52),
+                    strong_purplish_pink=(246, 118, 142),
+                    strong_blue=(0, 83, 138),
+                    strong_yellowish_pink=(255, 122, 92),
+                    strong_violet=(83, 55, 122),
+                    vivid_orange_yellow=(255, 142, 0),
+                    strong_purplish_red=(179, 40, 81),
+                    vivid_greenish_yellow=(244, 200, 0),
+                    strong_reddish_brown=(127, 24, 13),
+                    vivid_yellowish_green=(147, 170, 0),
+                    deep_yellowish_brown=(89, 51, 21),
+                    vivid_reddish_orange=(241, 58, 19),
+                    dark_olive_green=(35, 44, 22))
+</code></pre>

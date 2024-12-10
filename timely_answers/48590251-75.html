@@ -1,0 +1,36 @@
+<p>In addition to <a href="https://stackoverflow.com/a/48027778/6309"><code>git describe</code>, that I mention in my previous answer</a>, <code>git log</code> and <code>git diff</code> now benefits as well from the &quot;<code>--find-object=&lt;object-id&gt;</code>&quot; option to limit the findings to changes that involve the named object.<br />
+That is in Git 2.16.x/2.17 (Q1 2018)</p>
+<p>See <a href="https://github.com/git/git/commit/4d8c51aa19be94bddb7cac6b11bccb4d23dfd4f8" rel="nofollow noreferrer">commit 4d8c51a</a>, <a href="https://github.com/git/git/commit/5e505257f2651647c072f9c61fdc5dd52bbce8b2" rel="nofollow noreferrer">commit 5e50525</a>, <a href="https://github.com/git/git/commit/15af58c1adba431c216e2a45fa0d22944560ba02" rel="nofollow noreferrer">commit 15af58c</a>, <a href="https://github.com/git/git/commit/cf63051adad03e827e0313a57db0a79ad39a04a0" rel="nofollow noreferrer">commit cf63051</a>, <a href="https://github.com/git/git/commit/c1ddc4610c553b06591aac74b610b56448cbb976" rel="nofollow noreferrer">commit c1ddc46</a>, <a href="https://github.com/git/git/commit/929ed70a7263fc3be909b363993672b649153706" rel="nofollow noreferrer">commit 929ed70</a> (04 Jan 2018) by <a href="https://github.com/stefanbeller" rel="nofollow noreferrer">Stefan Beller (<code>stefanbeller</code>)</a>.<br />
+<sup>(Merged by <a href="https://github.com/gitster" rel="nofollow noreferrer">Junio C Hamano -- <code>gitster</code> --</a> in <a href="https://github.com/git/git/commit/c0d75f0e2e2cbf432358bfd00be593fd28e257a3" rel="nofollow noreferrer">commit c0d75f0</a>, 23 Jan 2018)</sup></p>
+<blockquote>
+<h2><code>diffcore</code>: add a pickaxe option to find a specific blob</h2>
+</blockquote>
+<blockquote>
+<p>Sometimes users are given a hash of an object and they want to identify it further (ex.: Use verify-pack to find the largest blobs,
+but what are these? Or this Stack Overflow question &quot;<a href="https://stackoverflow.com/q/223678/6309">Which commit has this blob?</a>&quot;)</p>
+<p>One might be tempted to extend <code>git-describe</code> to also work with blobs,
+such that <code>git describe &lt;blob-id&gt;</code> gives a description as
+'<code>&lt;commit-ish&gt;:&lt;path&gt;</code>'.<br />
+This was <a href="https://public-inbox.org/git/20171028004419.10139-1-sbeller@google.com/" rel="nofollow noreferrer">implemented here</a>; as seen by the sheer
+number of responses (&gt;110), it turns out this is tricky to get right.<br />
+The hard part to get right is picking the correct 'commit-ish' as that
+could be the commit that (re-)introduced the blob or the blob that
+removed the blob; the blob could exist in different branches.</p>
+<p>Junio hinted at a different approach of solving this problem, which this
+patch implements.<br />
+Teach the <code>diff</code> machinery another flag for restricting the information to what is shown.<br />
+For example:</p>
+<pre><code>$ ./git log --oneline --find-object=v2.0.0:Makefile
+  b2feb64 Revert the whole &quot;ask curl-config&quot; topic for now
+  47fbfde i18n: only extract comments marked with &quot;TRANSLATORS:&quot;
+</code></pre>
+<p>we observe that the <code>Makefile</code> as shipped with <code>2.0</code> was appeared in
+<code>v1.9.2-471-g47fbfded53</code> and in <code>v2.0.0-rc1-5-gb2feb6430b</code>.<br />
+The reason why these commits both occur prior to v2.0.0 are evil
+merges that are not found using this new mechanism.</p>
+</blockquote>
+<hr />
+<p>As noted in <a href="https://stackoverflow.com/questions/223678/which-commit-has-this-blob/48590251#comment122173464_48590251">the comments</a> by <a href="https://stackoverflow.com/users/4288506/marcono1234">marcono1234</a>, you can combine that with the <a href="https://git-scm.com/docs/git-log#Documentation/git-log.txt---all" rel="nofollow noreferrer">git log --all</a> option:</p>
+<blockquote>
+<p>this can be useful when you don't know which branch contains the object.</p>
+</blockquote>

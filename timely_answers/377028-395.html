@@ -1,0 +1,21 @@
+<p>Easiest way I can think of:</p>
+<pre><code>def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ[&quot;PATH&quot;].split(os.pathsep):
+            path = path.strip('&quot;')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+</code></pre>
+<p><strong>Edit</strong>: Updated code sample to include logic for handling case where provided argument is already a full path to the executable, i.e. &quot;which /bin/ls&quot;. This mimics the behavior of the UNIX 'which' command.</p>
+<p><strong>Edit</strong>: Updated to use os.path.isfile() instead of os.path.exists() per comments.</p>

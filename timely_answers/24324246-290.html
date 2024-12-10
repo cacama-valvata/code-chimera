@@ -1,0 +1,20 @@
+<p>That won't quite work, because <code>MemoryHandler</code>'s <code>flush()</code> method doesn't check levels before sending them to the target - all buffered records are sent. However, you could use a filter on the target handler, as in this example:</p>
+<pre><code>import logging, logging.handlers
+
+class WarningFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno &gt;= logging.WARNING
+
+logger = logging.getLogger('foo')
+mh = logging.handlers.MemoryHandler(1000)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(mh)
+logger.debug('bar')
+logger.warning('baz')
+sh = logging.StreamHandler()
+sh.setLevel(logging.WARNING)
+sh.addFilter(WarningFilter())
+mh.setTarget(sh)
+mh.flush()
+</code></pre>
+<p>When run, you should just see <code>baz</code> printed.</p>

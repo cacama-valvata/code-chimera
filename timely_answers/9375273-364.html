@@ -1,0 +1,25 @@
+
+<p>The problem with your code is <code>QLayout.itemAt()</code> returns a <code>QLayoutItem</code>, <code>QWidgetItem</code> or <code>QSpacerItem</code> depending on the item at that position. So the condition:</p>
+<pre class="lang-py prettyprint-override"><code>type(layout.itemAt(i)) == QtGui.QHBoxLayout
+</code></pre>
+<p>will never be <code>True</code> and you will be trying to do <code>.widget()</code> for a <code>QLayoutItem</code> and that returns <code>None</code>. Thus the error you get. Another thing is, you need to loop backwards. Because removing things from the beginning will shift items and change the order of items.</p>
+<p>You need to write your function like this:</p>
+<pre class="lang-py prettyprint-override"><code>def clearLayout(self, layout):
+    for i in reversed(range(layout.count())):
+        item = layout.itemAt(i)
+
+        if isinstance(item, QtGui.QWidgetItem):
+            print &quot;widget&quot; + str(item)
+            item.widget().close()
+            # or
+            # item.widget().setParent(None)
+        elif isinstance(item, QtGui.QSpacerItem):
+            print &quot;spacer &quot; + str(item)
+            # no need to do extra stuff
+        else:
+            print &quot;layout &quot; + str(item)
+            self.clearLayout(item.layout())
+        
+        # remove the item from layout
+        layout.removeItem(item)    
+</code></pre>

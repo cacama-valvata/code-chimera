@@ -1,0 +1,5 @@
+<p>There is none, but if you don't mind a little hack, you can generate it like this:</p>
+<pre><code>import signal
+dict((k, v) for v, k in reversed(sorted(signal.__dict__.items()))
+     if v.startswith('SIG') and not v.startswith('SIG_'))
+</code></pre>

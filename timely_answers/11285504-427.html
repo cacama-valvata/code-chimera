@@ -1,0 +1,63 @@
+<p>You can always do tricks like importing a module then deleting it from sys.modules or trying to copy a module. However, Python already provides what you want in its Standard Library.</p>
+<pre><code>import imp # Standard module to do such things you want to.
+
+# We can import any module including standard ones:
+os1=imp.load_module('os1', *imp.find_module('os'))
+
+# Here is another one:
+os2=imp.load_module('os2', *imp.find_module('os'))
+
+# This returns True:
+id(os1)!=id(os2)
+</code></pre>
+<blockquote>
+<h3>Python3.3+</h3>
+<p><code>imp.load_module</code> is <a href="https://docs.python.org/3/library/imp.html#imp.load_module" rel="nofollow noreferrer">deprecated in python3.3+</a>, and recommends the use of <code>importlib</code></p>
+<pre><code>#!/usr/bin/env python3
+
+import sys
+import importlib.util
+
+SPEC_OS = importlib.util.find_spec('os')
+os1 = importlib.util.module_from_spec(SPEC_OS)
+SPEC_OS.loader.exec_module(os1)
+sys.modules['os1'] = os1
+
+os2 = importlib.util.module_from_spec(SPEC_OS)
+SPEC_OS.loader.exec_module(os2)
+sys.modules['os2'] = os2
+del SPEC_OS
+
+assert os1 is not os2, \
+    &quot;Module `os` instancing failed&quot;
+</code></pre>
+</blockquote>
+<p>Here, we import the same module twice but as completely different module objects. If you check sys.modules, you can see two names you entered as first parameters to load_module calls. Take a look at the <a href="http://docs.python.org/library/imp.html" rel="nofollow noreferrer">documentation</a> for details.</p>
+<p><strong>UPDATE:</strong></p>
+<p>To make the main difference of this approach obvious, I want to make this clearer: When you import the same module this way, you will have both versions globally accessible for every other module you import in runtime, which is exactly what the questioner needs as I understood.</p>
+<p>Below is another example to emphasize this point.</p>
+<p>These two statements do exactly the same thing:</p>
+<pre><code>import my_socket_module as socket_imported
+
+socket_imported = imp.load_module('my_socket_module',
+    *imp.find_module('my_socket_module')
+)
+</code></pre>
+<p>On second line, we repeat 'my_socket_module' string twice and that is how import statement works; but these two strings are, in fact, used for two different reasons.</p>
+<p>Second occurrence as we passed it to find_module is used as the file name that will be found on the system. The first occurrence of the string as we passed it to load_module method is used as <em>system-wide identifier of the loaded module</em>.</p>
+<p>So, we can use different names for these which means we can make it work exactly like we copied the python source file for the module and loaded it.</p>
+<pre><code>socket = imp.load_module('socket_original', *imp.find_module('my_socket_module'))
+socket_monkey = imp.load_module('socket_patched',*imp.find_module('my_socket_module'))
+
+def alternative_implementation(blah, blah):
+    return 'Happiness'
+
+socket_monkey.original_function = alternative_implementation
+
+import my_sub_module
+</code></pre>
+<p>Then in my_sub_module, I can import 'socket_patched' which does not exist on system! Here we are in my_sub_module.py.</p>
+<pre><code>import socket_patched
+socket_patched.original_function('foo', 'bar')
+# This call brings us 'Happiness'
+</code></pre>

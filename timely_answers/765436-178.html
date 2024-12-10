@@ -1,0 +1,84 @@
+<p>The simplest was is to simply catch the IOError exception from urllib:</p>
+<pre><code>try:
+    urllib.urlopen(
+        &quot;http://example.com&quot;,
+        proxies={'http':'http://example.com:8080'}
+    )
+except IOError:
+    print &quot;Connection error! (Check proxy)&quot;
+else:
+    print &quot;All was fine&quot;
+</code></pre>
+<p>Also, from <a href="http://love-python.blogspot.com/2008/07/check-status-proxy-address.html" rel="nofollow noreferrer">this blog post - &quot;check status proxy address&quot;</a> (with some slight improvements):</p>
+<p><strong>for python 2</strong></p>
+<pre><code>import urllib2
+import socket
+
+def is_bad_proxy(pip):    
+    try:
+        proxy_handler = urllib2.ProxyHandler({'http': pip})
+        opener = urllib2.build_opener(proxy_handler)
+        opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        urllib2.install_opener(opener)
+        req=urllib2.Request('http://www.example.com')  # change the URL to test here
+        sock=urllib2.urlopen(req)
+    except urllib2.HTTPError, e:
+        print 'Error code: ', e.code
+        return e.code
+    except Exception, detail:
+        print &quot;ERROR:&quot;, detail
+        return True
+    return False
+
+def main():
+    socket.setdefaulttimeout(120)
+
+    # two sample proxy IPs
+    proxyList = ['125.76.226.9:80', '213.55.87.162:6588']
+
+    for currentProxy in proxyList:
+        if is_bad_proxy(currentProxy):
+            print &quot;Bad Proxy %s&quot; % (currentProxy)
+        else:
+            print &quot;%s is working&quot; % (currentProxy)
+
+if __name__ == '__main__':
+    main()
+</code></pre>
+<p><strong>for python 3</strong></p>
+<pre><code>import urllib.request
+import socket
+import urllib.error
+
+def is_bad_proxy(pip):    
+    try:
+        proxy_handler = urllib.request.ProxyHandler({'http': pip})
+        opener = urllib.request.build_opener(proxy_handler)
+        opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        urllib.request.install_opener(opener)
+        req=urllib.request.Request('http://www.example.com')  # change the URL to test here
+        sock=urllib.request.urlopen(req)
+    except urllib.error.HTTPError as e:
+        print('Error code: ', e.code)
+        return e.code
+    except Exception as detail:
+        print(&quot;ERROR:&quot;, detail)
+        return True
+    return False
+
+def main():
+    socket.setdefaulttimeout(120)
+
+    # two sample proxy IPs
+    proxyList = ['125.76.226.9:80', '25.176.126.9:80']
+
+    for currentProxy in proxyList:
+        if is_bad_proxy(currentProxy):
+            print(&quot;Bad Proxy %s&quot; % (currentProxy))
+        else:
+            print(&quot;%s is working&quot; % (currentProxy))
+
+if __name__ == '__main__':
+    main() 
+</code></pre>
+<p>Remember this could double the time the script takes, if the proxy is down (as you will have to wait for two connection-timeouts).. Unless you specifically have to know the proxy is at fault, handling the IOError is far cleaner, simpler and quicker..</p>

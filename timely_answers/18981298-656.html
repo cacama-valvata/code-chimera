@@ -1,0 +1,5 @@
+<p>bucket.list() does not return metadata. try this instead:</p>
+<pre><code>for key in bucket.list():
+   akey = bucket.get_key(key.name)
+   print akey.get_metadata(&quot;company&quot;)
+</code></pre>

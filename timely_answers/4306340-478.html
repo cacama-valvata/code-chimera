@@ -1,0 +1,8 @@
+<p>If you've already got the figure created you can quickly do this:</p>
+<pre><code>fig = matplotlib.pyplot.gcf()
+fig.set_size_inches(18.5, 10.5)
+fig.savefig('test2png.png', dpi=100)
+</code></pre>
+<p>To propagate the size change to an existing gui window add <code>forward=True</code></p>
+<pre><code>fig.set_size_inches(18.5, 10.5, forward=True)
+</code></pre>

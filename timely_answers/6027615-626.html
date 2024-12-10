@@ -1,0 +1,16 @@
+<p>Basically the same way you would flatten a nested list, you just have to do the extra work for iterating the dict by key/value, creating new keys for your new dictionary and creating the dictionary at final step.</p>
+<pre><code>from collections.abc import MutableMapping
+
+def flatten(dictionary, parent_key='', separator='_'):
+    items = []
+    for key, value in dictionary.items():
+        new_key = parent_key + separator + key if parent_key else key
+        if isinstance(value, MutableMapping):
+            items.extend(flatten(value, new_key, separator=separator).items())
+        else:
+            items.append((new_key, value))
+    return dict(items)
+
+&gt;&gt;&gt; flatten({'a': 1, 'c': {'a': 2, 'b': {'x': 5, 'y' : 10}}, 'd': [1, 2, 3]})
+{'a': 1, 'c_a': 2, 'c_b_x': 5, 'd': [1, 2, 3], 'c_b_y': 10}
+</code></pre>

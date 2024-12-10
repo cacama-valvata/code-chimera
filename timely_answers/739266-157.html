@@ -1,0 +1,6 @@
+<p>Or shorten David's answer with:</p>
+<pre><code>if 4 &lt;= day &lt;= 20 or 24 &lt;= day &lt;= 30:
+    suffix = &quot;th&quot;
+else:
+    suffix = [&quot;st&quot;, &quot;nd&quot;, &quot;rd&quot;][day % 10 - 1]
+</code></pre>

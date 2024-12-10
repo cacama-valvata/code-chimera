@@ -1,0 +1,17 @@
+<p>The correct answer for this is to use the already provided <a href="https://docs.python.org/2/library/logging.html#logrecord-attributes" rel="nofollow noreferrer"><code>funcName</code></a> variable</p>
+<pre><code>import logging
+logger = logging.getLogger(__name__)
+FORMAT = &quot;[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s&quot;
+logging.basicConfig(format=FORMAT)
+logger.setLevel(logging.DEBUG)
+</code></pre>
+<p>Then anywhere you want, just add:</p>
+<pre><code>logger.debug('your message') 
+</code></pre>
+<p>Example output from a script I'm working on right now:</p>
+<pre><code>[invRegex.py:150 -          handleRange() ] ['[A-Z]']
+[invRegex.py:155 -     handleRepetition() ] [[&lt;__main__.CharacterRangeEmitter object at 0x10ba03050&gt;, '{', '1', '}']]
+[invRegex.py:197 -          handleMacro() ] ['\\d']
+[invRegex.py:155 -     handleRepetition() ] [[&lt;__main__.CharacterRangeEmitter object at 0x10ba03950&gt;, '{', '1', '}']]
+[invRegex.py:210 -       handleSequence() ] [[&lt;__main__.GroupEmitter object at 0x10b9fedd0&gt;, &lt;__main__.GroupEmitter object at 0x10ba03ad0&gt;]]
+</code></pre>

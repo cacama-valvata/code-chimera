@@ -1,0 +1,25 @@
+<p>The problem with your approach is that you are trying to interpret bash scripts. First you just try to interpret the export statement. Then you notice people are using variable expansion. Later people will put conditionals in their files, or process substitutions. In the end you will have a full blown bash script interpreter with a gazillion bugs. Don't do that.</p>
+<p>Let Bash interpret the file for you and then collect the results.</p>
+<p>You can do it like this:</p>
+<pre><code>#! /usr/bin/env python
+
+import os
+import pprint
+import shlex
+import subprocess
+
+command = shlex.split(&quot;env -i bash -c 'source init_env &amp;&amp; env'&quot;)
+proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+for line in proc.stdout:
+  (key, _, value) = line.partition(&quot;=&quot;)
+  os.environ[key] = value
+proc.communicate()
+
+pprint.pprint(dict(os.environ))
+</code></pre>
+<p>Make sure that you handle errors in case bash fails to <code>source init_env</code>, or bash itself fails to execute, or subprocess fails to execute bash, or any other errors.</p>
+<p>the <code>env -i</code> at the beginning of the command line creates a clean environment. that means you will only get the environment variables from <code>init_env</code>. if you want the inherited system environment then omit <code>env -i</code>.</p>
+<p>Read the documentation on <a href="http://docs.python.org/library/subprocess.html" rel="nofollow noreferrer">subprocess</a> for more details.</p>
+<p>Note: this will only capture variables set with the <code>export</code> statement, as <code>env</code> only prints exported variables.</p>
+<p>Enjoy.</p>
+<p>Note that the <a href="http://docs.python.org/library/os.html#os.environ" rel="nofollow noreferrer">Python documentation</a> says that if you want to manipulate the environment you should manipulate <code>os.environ</code> directly instead of using <code>os.putenv()</code>. I consider that a bug, but I digress.</p>

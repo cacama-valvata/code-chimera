@@ -1,0 +1,13 @@
+<p>Python 3 does <em>not</em> expect ASCII from <code>sys.stdin</code>. It'll open <code>stdin</code> in text mode and make an educated guess as to what encoding is used. That guess may come down to <code>ASCII</code>, but that is not a given. See the <a href="http://docs.python.org/3/library/sys.html#sys.stdin" rel="nofollow noreferrer"><code>sys.stdin</code> documentation</a> on how the codec is selected.</p>
+<p>Like other file objects opened in text mode, the <code>sys.stdin</code> object derives from the <a href="http://docs.python.org/3/library/io.html#io.TextIOBase" rel="nofollow noreferrer"><code>io.TextIOBase</code> base class</a>; it has a <code>.buffer</code> attribute pointing to the underlying buffered IO instance (which in turn has a <code>.raw</code> attribute).</p>
+<p>Wrap the <code>sys.stdin.buffer</code> attribute in a new <a href="http://docs.python.org/3/library/io.html#io.TextIOWrapper" rel="nofollow noreferrer"><code>io.TextIOWrapper()</code> instance</a> to specify a different encoding:</p>
+<pre><code>import io
+import sys
+
+input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+</code></pre>
+<p>Alternatively, set the <a href="http://docs.python.org/3/using/cmdline.html#envvar-PYTHONIOENCODING" rel="nofollow noreferrer"><code>PYTHONIOENCODING</code> environment variable</a> to the desired codec when running python.</p>
+<p>From Python 3.7 onwards, you can also <a href="https://docs.python.org/3.7/library/io.html#io.TextIOWrapper.reconfigure" rel="nofollow noreferrer">reconfigure the existing <code>std*</code> wrappers</a>, provided you do it at the start (before any data has been read):</p>
+<pre><code># Python 3.7 and newer
+sys.stdin.reconfigure(encoding='utf-8')
+</code></pre>

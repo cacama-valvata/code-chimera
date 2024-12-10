@@ -1,0 +1,64 @@
+<p>There's an extremely useful profiling recipe on the <a href="http://www.sqlalchemy.org/trac/wiki/UsageRecipes/Profiling" rel="nofollow noreferrer">SQLAlchemy wiki</a></p>
+<p>With a couple of minor modifications,</p>
+<pre><code>from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import time
+import logging
+ 
+logging.basicConfig()
+logger = logging.getLogger(&quot;myapp.sqltime&quot;)
+logger.setLevel(logging.DEBUG)
+
+@event.listens_for(Engine, &quot;before_cursor_execute&quot;)
+def before_cursor_execute(conn, cursor, statement, 
+                        parameters, context, executemany):
+    context._query_start_time = time.time()
+    logger.debug(&quot;Start Query:\n%s&quot; % statement)
+    # Modification for StackOverflow answer:
+    # Show parameters, which might be too verbose, depending on usage..
+    logger.debug(&quot;Parameters:\n%r&quot; % (parameters,))
+
+
+@event.listens_for(Engine, &quot;after_cursor_execute&quot;)
+def after_cursor_execute(conn, cursor, statement, 
+                        parameters, context, executemany):
+    total = time.time() - context._query_start_time
+    logger.debug(&quot;Query Complete!&quot;)
+
+    # Modification for StackOverflow: times in milliseconds
+    logger.debug(&quot;Total Time: %.02fms&quot; % (total*1000))
+
+if __name__ == '__main__':
+    from sqlalchemy import *
+ 
+    engine = create_engine('sqlite://')
+ 
+    m1 = MetaData(engine)
+    t1 = Table(&quot;sometable&quot;, m1, 
+            Column(&quot;id&quot;, Integer, primary_key=True),
+            Column(&quot;data&quot;, String(255), nullable=False),
+        )
+ 
+    conn = engine.connect()
+    m1.create_all(conn)
+ 
+    conn.execute(
+        t1.insert(), 
+        [{&quot;data&quot;:&quot;entry %d&quot; % x} for x in xrange(100000)]
+    )
+ 
+    conn.execute(
+        t1.select().where(t1.c.data.between(&quot;entry 25&quot;, &quot;entry 7800&quot;)).order_by(desc(t1.c.data))
+    )
+</code></pre>
+<p>Output is something like:</p>
+<pre><code>DEBUG:myapp.sqltime:Start Query:
+SELECT sometable.id, sometable.data 
+FROM sometable 
+WHERE sometable.data BETWEEN ? AND ? ORDER BY sometable.data DESC
+DEBUG:myapp.sqltime:Parameters:
+('entry 25', 'entry 7800')
+DEBUG:myapp.sqltime:Query Complete!
+DEBUG:myapp.sqltime:Total Time: 410.46ms
+</code></pre>
+<p>Then if you find an oddly slow query, you could take the query string, format in the parameters (can be done the <code>%</code> string-formatting operator, for psycopg2 at least), prefix it with &quot;EXPLAIN ANALYZE&quot; and shove the query plan output into <a href="http://explain.depesz.com/" rel="nofollow noreferrer">http://explain.depesz.com/</a> (found via <a href="http://robots.thoughtbot.com/post/2638538135/postgresql-performance-considerations" rel="nofollow noreferrer">this good article on PostgreSQL performance</a>)</p>

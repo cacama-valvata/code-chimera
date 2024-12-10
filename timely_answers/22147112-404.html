@@ -1,0 +1,7 @@
+<p>Same issue. I am using vagrant, my host OS is Windows while the Gust OS is Ubuntu. I am not a vim fan, so @simo's answer does not help me much because I really rely on virtual box shared folders to sync changes made by sublime editor to the Ubuntu virtual machine.</p>
+<p>Thanks to Fabian Kochem, he found a quick and dirty workaround: <a href="http://bugs.python.org/issue8876#msg208792" rel="nofollow noreferrer">post</a></p>
+<pre><code># if you are not using vagrant, just delete os.link directly,
+# The hard link only saves a little disk space, so you should not care
+if os.environ.get('USER','') == 'vagrant':
+    del os.link
+</code></pre>

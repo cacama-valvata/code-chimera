@@ -1,0 +1,62 @@
+<p>The reason why the recursive statement wasn't executed first is because of the following statement:</p>
+<p><code>Collect = proxyscrape.create_collector('default','socks5')</code></p>
+<p>As the for statement repeated, an error occurred because the <code>default</code> was already defined and defined again.</p>
+<p>So I got the following error:</p>
+<pre><code>proxyscrape.errors.CollectorAlreadyDefinedError: default is already defined as a collector
+</code></pre>
+<p>So I did the syntax like this:</p>
+<pre><code>try:
+    collector =proxyscrape.get_collector('default')
+except proxyscrape.errors.CollectorNotFoundError:
+    collector = proxyscrape.create_collector('default', 'socks5')
+</code></pre>
+<p>The full code is:</p>
+<pre><code>import time
+from selenium import webdriver
+import proxyscrape
+import logging
+
+def generateProxy():
+    try:
+        collector =proxyscrape.get_collector('default')
+    except proxyscrape.errors.CollectorNotFoundError:
+        collector = proxyscrape.create_collector('default', 'socks5')
+
+    # Create a collector for http resources
+    proxy = collector.get_proxy({'country': 'united states'})  # Retrieve a united states proxy
+    proxy = proxy.host+&quot;:&quot;+proxy.port
+    print(&quot;proxy : &quot; + proxy)
+    chrome_options = webdriver.ChromeOptions()
+    if proxy != &quot;NULL&quot;:
+        chrome_options.add_argument(&quot;--incognito&quot;)
+        chrome_options.add_argument(&quot;--proxy-server=socks5://&quot; + proxy)
+        chrome_options.add_argument(&quot;--test-type&quot;)
+
+    # Remover Visual Browser 
+    #chrome_options.add_argument(&quot;headless&quot;) 
+    # Mute Audio   
+    #chrome_options.add_argument(&quot;--mute-audio&quot;)
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get(&quot;https://google.com&quot;)
+    time.sleep(3)
+    btn = driver.find_elements_by_tag_names('a')
+    return proxy
+
+def testProxy():
+    result = None
+    while result is None:
+        try:
+            print(&quot;[+] Testing a new proxy&quot;)
+            result = generateProxy()
+            time.sleep(2)
+        except Exception as e:
+            logging.exception(&quot;Something awful happened!&quot;)
+            print(&quot;[+] Proxy is bad, trying another&quot;)
+            time.sleep(2)
+            pass    
+    return result
+
+if __name__ == '__main__':
+    test = testProxy()
+    print(test)
+</code></pre>

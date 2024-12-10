@@ -1,0 +1,9 @@
+<p>The answer is no, but as of Python 3.7 you can use the simple <code>dict</code> from the Python standard library with just keys (and values as <code>None</code>) for the same purpose.</p>
+<p>Here's an example of how to use <code>dict</code> as an ordered set to filter out duplicate items while preserving order, thereby emulating an ordered set. Use the <code>dict</code> class method <code>fromkeys()</code> to create a dict, then simply ask for the <code>keys()</code> back.</p>
+<pre><code>&gt;&gt;&gt; keywords = ['foo', 'bar', 'bar', 'foo', 'baz', 'foo']
+
+&gt;&gt;&gt; list(dict.fromkeys(keywords))
+['foo', 'bar', 'baz']
+</code></pre>
+<hr />
+<p>For older versions of Python, use the <a href="https://docs.python.org/3/library/collections.html" rel="nofollow noreferrer"><code>collections.OrderedDict</code></a></p>

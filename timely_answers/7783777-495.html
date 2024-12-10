@@ -1,0 +1,10 @@
+<p>The SQL below should work:</p>
+<pre><code>SELECT * FROM Table1 a 
+WHERE (
+          acos(sin(a.Latitude * 0.0175) * sin(YOUR_LATITUDE_X * 0.0175) 
+               + cos(a.Latitude * 0.0175) * cos(YOUR_LATITUDE_X * 0.0175) *    
+                 cos((YOUR_LONGITUDE_Y * 0.0175) - (a.Longitude * 0.0175))
+              ) * 3959 &lt;= YOUR_RADIUS_INMILES
+      )
+</code></pre>
+<p>This is based on the spherical law of cosines, for more detailed information on the topic, check out this article - <a href="http://www.movable-type.co.uk/scripts/latlong.html" rel="nofollow noreferrer">http://www.movable-type.co.uk/scripts/latlong.html</a></p>

@@ -1,0 +1,16 @@
+<p>Getting the name of the file without the extension:</p>
+<pre><code>import os
+print(os.path.splitext(&quot;/path/to/some/file.txt&quot;)[0])
+</code></pre>
+<p>Prints:</p>
+<pre><code>/path/to/some/file
+</code></pre>
+<p><a href="https://docs.python.org/3/library/os.path.html#os.path.splitext" rel="nofollow noreferrer">Documentation for <code>os.path.splitext</code></a>.</p>
+<p><em>Important Note:</em> If the filename has multiple dots, only the extension after the last one is removed. For example:</p>
+<pre><code>import os
+print(os.path.splitext(&quot;/path/to/some/file.txt.zip.asc&quot;)[0])
+</code></pre>
+<p>Prints:</p>
+<pre><code>/path/to/some/file.txt.zip
+</code></pre>
+<p>See other answers below if you need to handle that case.</p>

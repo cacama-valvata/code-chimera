@@ -1,0 +1,236 @@
+<h1>Replacing two characters</h1>
+<p>I timed all the methods in the current answers along with one extra.</p>
+<p>With an input string of <code>abc&amp;def#ghi</code> and replacing &amp; -&gt; &amp; and # -&gt; #, the fastest was to chain together the replacements like: <code>text.replace('&amp;', '\&amp;').replace('#', '\#')</code>.</p>
+<p>Timings for each function:</p>
+<ul>
+<li>a) 1000000 loops, best of 3: 1.47 μs per loop</li>
+<li>b) 1000000 loops, best of 3: 1.51 μs per loop</li>
+<li>c) 100000 loops, best of 3: 12.3 μs per loop</li>
+<li>d) 100000 loops, best of 3: 12 μs per loop</li>
+<li>e) 100000 loops, best of 3: 3.27 μs per loop</li>
+<li><strong>f) 1000000 loops, best of 3: 0.817 μs per loop</strong></li>
+<li>g) 100000 loops, best of 3: 3.64 μs per loop</li>
+<li><strong>h) 1000000 loops, best of 3: 0.927 μs per loop</strong></li>
+<li><strong>i) 1000000 loops, best of 3: 0.814 μs per loop</strong></li>
+</ul>
+<p>Here are the functions:</p>
+<pre><code>def a(text):
+    chars = &quot;&amp;#&quot;
+    for c in chars:
+        text = text.replace(c, &quot;\\&quot; + c)
+
+
+def b(text):
+    for ch in ['&amp;','#']:
+        if ch in text:
+            text = text.replace(ch,&quot;\\&quot;+ch)
+
+
+import re
+def c(text):
+    rx = re.compile('([&amp;#])')
+    text = rx.sub(r'\\\1', text)
+
+
+RX = re.compile('([&amp;#])')
+def d(text):
+    text = RX.sub(r'\\\1', text)
+
+
+def mk_esc(esc_chars):
+    return lambda s: ''.join(['\\' + c if c in esc_chars else c for c in s])
+esc = mk_esc('&amp;#')
+def e(text):
+    esc(text)
+
+
+def f(text):
+    text = text.replace('&amp;', '\&amp;').replace('#', '\#')
+
+
+def g(text):
+    replacements = {&quot;&amp;&quot;: &quot;\&amp;&quot;, &quot;#&quot;: &quot;\#&quot;}
+    text = &quot;&quot;.join([replacements.get(c, c) for c in text])
+
+
+def h(text):
+    text = text.replace('&amp;', r'\&amp;')
+    text = text.replace('#', r'\#')
+
+
+def i(text):
+    text = text.replace('&amp;', r'\&amp;').replace('#', r'\#')
+</code></pre>
+<p>Timed like this:</p>
+<pre><code>python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.a('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.b('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.c('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.d('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.e('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.f('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.g('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.h('abc&amp;def#ghi')&quot;
+python -mtimeit -s&quot;import time_functions&quot; &quot;time_functions.i('abc&amp;def#ghi')&quot;
+</code></pre>
+<hr />
+<h1>Replacing 17 characters</h1>
+<p>Here's similar code to do the same but with more characters to escape (\`*_{}&gt;#+-.!$):</p>
+<pre><code>def a(text):
+    chars = &quot;\\`*_{}[]()&gt;#+-.!$&quot;
+    for c in chars:
+        text = text.replace(c, &quot;\\&quot; + c)
+
+
+def b(text):
+    for ch in ['\\','`','*','_','{','}','[',']','(',')','&gt;','#','+','-','.','!','$','\'']:
+        if ch in text:
+            text = text.replace(ch,&quot;\\&quot;+ch)
+
+
+import re
+def c(text):
+    rx = re.compile('([&amp;#])')
+    text = rx.sub(r'\\\1', text)
+
+
+RX = re.compile('([\\`*_{}[]()&gt;#+-.!$])')
+def d(text):
+    text = RX.sub(r'\\\1', text)
+
+
+def mk_esc(esc_chars):
+    return lambda s: ''.join(['\\' + c if c in esc_chars else c for c in s])
+esc = mk_esc('\\`*_{}[]()&gt;#+-.!$')
+def e(text):
+    esc(text)
+
+
+def f(text):
+    text = text.replace('\\', '\\\\').replace('`', '\`').replace('*', '\*').replace('_', '\_').replace('{', '\{').replace('}', '\}').replace('[', '\[').replace(']', '\]').replace('(', '\(').replace(')', '\)').replace('&gt;', '\&gt;').replace('#', '\#').replace('+', '\+').replace('-', '\-').replace('.', '\.').replace('!', '\!').replace('$', '\$')
+
+
+def g(text):
+    replacements = {
+        &quot;\\&quot;: &quot;\\\\&quot;,
+        &quot;`&quot;: &quot;\`&quot;,
+        &quot;*&quot;: &quot;\*&quot;,
+        &quot;_&quot;: &quot;\_&quot;,
+        &quot;{&quot;: &quot;\{&quot;,
+        &quot;}&quot;: &quot;\}&quot;,
+        &quot;[&quot;: &quot;\[&quot;,
+        &quot;]&quot;: &quot;\]&quot;,
+        &quot;(&quot;: &quot;\(&quot;,
+        &quot;)&quot;: &quot;\)&quot;,
+        &quot;&gt;&quot;: &quot;\&gt;&quot;,
+        &quot;#&quot;: &quot;\#&quot;,
+        &quot;+&quot;: &quot;\+&quot;,
+        &quot;-&quot;: &quot;\-&quot;,
+        &quot;.&quot;: &quot;\.&quot;,
+        &quot;!&quot;: &quot;\!&quot;,
+        &quot;$&quot;: &quot;\$&quot;,
+    }
+    text = &quot;&quot;.join([replacements.get(c, c) for c in text])
+
+
+def h(text):
+    text = text.replace('\\', r'\\')
+    text = text.replace('`', r'\`')
+    text = text.replace('*', r'\*')
+    text = text.replace('_', r'\_')
+    text = text.replace('{', r'\{')
+    text = text.replace('}', r'\}')
+    text = text.replace('[', r'\[')
+    text = text.replace(']', r'\]')
+    text = text.replace('(', r'\(')
+    text = text.replace(')', r'\)')
+    text = text.replace('&gt;', r'\&gt;')
+    text = text.replace('#', r'\#')
+    text = text.replace('+', r'\+')
+    text = text.replace('-', r'\-')
+    text = text.replace('.', r'\.')
+    text = text.replace('!', r'\!')
+    text = text.replace('$', r'\$')
+
+
+def i(text):
+    text = text.replace('\\', r'\\').replace('`', r'\`').replace('*', r'\*').replace('_', r'\_').replace('{', r'\{').replace('}', r'\}').replace('[', r'\[').replace(']', r'\]').replace('(', r'\(').replace(')', r'\)').replace('&gt;', r'\&gt;').replace('#', r'\#').replace('+', r'\+').replace('-', r'\-').replace('.', r'\.').replace('!', r'\!').replace('$', r'\$')
+</code></pre>
+<p>Here's the results for the same input string <code>abc&amp;def#ghi</code>:</p>
+<ul>
+<li>a) 100000 loops, best of 3: 6.72 μs per loop</li>
+<li>b) <strong>100000 loops, best of 3: 2.64 μs per loop</strong></li>
+<li>c) 100000 loops, best of 3: 11.9 μs per loop</li>
+<li>d) 100000 loops, best of 3: 4.92 μs per loop</li>
+<li>e) <strong>100000 loops, best of 3: 2.96 μs per loop</strong></li>
+<li>f) 100000 loops, best of 3: 4.29 μs per loop</li>
+<li>g) 100000 loops, best of 3: 4.68 μs per loop</li>
+<li>h) 100000 loops, best of 3: 4.73 μs per loop</li>
+<li>i) 100000 loops, best of 3: 4.24 μs per loop</li>
+</ul>
+<p>And with a longer input string (<code>## *Something* and [another] thing in a longer sentence with {more} things to replace$</code>):</p>
+<ul>
+<li>a) 100000 loops, best of 3: 7.59 μs per loop</li>
+<li>b) 100000 loops, best of 3: 6.54 μs per loop</li>
+<li>c) 100000 loops, best of 3: 16.9 μs per loop</li>
+<li>d) 100000 loops, best of 3: 7.29 μs per loop</li>
+<li>e) 100000 loops, best of 3: 12.2 μs per loop</li>
+<li>f) <strong>100000 loops, best of 3: 5.38 μs per loop</strong></li>
+<li>g) 10000 loops, best of 3: 21.7 μs per loop</li>
+<li>h) <strong>100000 loops, best of 3: 5.7 μs per loop</strong></li>
+<li>i) <strong>100000 loops, best of 3: 5.13 μs per loop</strong></li>
+</ul>
+<p>Adding a couple of variants:</p>
+<pre><code>def ab(text):
+    for ch in ['\\','`','*','_','{','}','[',']','(',')','&gt;','#','+','-','.','!','$','\'']:
+        text = text.replace(ch,&quot;\\&quot;+ch)
+
+
+def ba(text):
+    chars = &quot;\\`*_{}[]()&gt;#+-.!$&quot;
+    for c in chars:
+        if c in text:
+            text = text.replace(c, &quot;\\&quot; + c)
+</code></pre>
+<p>With the shorter input:</p>
+<ul>
+<li>ab) 100000 loops, best of 3: 7.05 μs per loop</li>
+<li>ba) 100000 loops, best of 3: 2.4 μs per loop</li>
+</ul>
+<p>With the longer input:</p>
+<ul>
+<li>ab) 100000 loops, best of 3: 7.71 μs per loop</li>
+<li>ba) 100000 loops, best of 3: 6.08 μs per loop</li>
+</ul>
+<p>So I'm going to use <code>ba</code> for readability and speed.</p>
+<h1>Addendum</h1>
+<p>Prompted by haccks in the comments, one difference between <code>ab</code> and <code>ba</code> is the <code>if c in text:</code> check. Let's test them against two more variants:</p>
+<pre><code>def ab_with_check(text):
+    for ch in ['\\','`','*','_','{','}','[',']','(',')','&gt;','#','+','-','.','!','$','\'']:
+        if ch in text:
+            text = text.replace(ch,&quot;\\&quot;+ch)
+
+def ba_without_check(text):
+    chars = &quot;\\`*_{}[]()&gt;#+-.!$&quot;
+    for c in chars:
+        text = text.replace(c, &quot;\\&quot; + c)
+</code></pre>
+<p>Times in μs per loop on Python 2.7.14 and 3.6.3, and on a different machine from the earlier set, so cannot be compared directly.</p>
+<pre><code>╭────────────╥──────┬───────────────┬──────┬──────────────────╮
+│ Py, input  ║  ab  │ ab_with_check │  ba  │ ba_without_check │
+╞════════════╬══════╪═══════════════╪══════╪══════════════════╡
+│ Py2, short ║ 8.81 │    4.22       │ 3.45 │    8.01          │
+│ Py3, short ║ 5.54 │    1.34       │ 1.46 │    5.34          │
+├────────────╫──────┼───────────────┼──────┼──────────────────┤
+│ Py2, long  ║ 9.3  │    7.15       │ 6.85 │    8.55          │
+│ Py3, long  ║ 7.43 │    4.38       │ 4.41 │    7.02          │
+└────────────╨──────┴───────────────┴──────┴──────────────────┘
+</code></pre>
+<p>We can conclude that:</p>
+<ul>
+<li><p>Those with the check are up to 4x faster than those without the check</p>
+</li>
+<li><p><code>ab_with_check</code> is slightly in the lead on Python 3, but <code>ba</code> (with check) has a greater lead on Python 2</p>
+</li>
+<li><p>However, the biggest lesson here is <strong>Python 3 is up to 3x faster than Python 2</strong>! There's not a huge difference between the slowest on Python 3 and fastest on Python 2!</p>
+</li>
+</ul>

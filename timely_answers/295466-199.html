@@ -1,0 +1,35 @@
+<p>You can look at the <a href="http://www.djangoproject.com" rel="nofollow noreferrer">Django framework</a> (but take their licence into account!) for how they create a &quot;slug&quot; from arbitrary text.  A slug is URL- and filename- friendly.</p>
+<p>The Django text utils define a function, <a href="https://docs.djangoproject.com/en/4.0/ref/utils/#django.utils.text.slugify" rel="nofollow noreferrer"><code>slugify()</code></a>, that's probably the gold standard for this kind of thing. Essentially, their code is the following.</p>
+<pre class="lang-python prettyprint-override"><code>import unicodedata
+import re
+
+def slugify(value, allow_unicode=False):
+    &quot;&quot;&quot;
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    &quot;&quot;&quot;
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
+</code></pre>
+<p>And the older version:</p>
+<pre class="lang-python prettyprint-override"><code>def slugify(value):
+    &quot;&quot;&quot;
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+    &quot;&quot;&quot;
+    import unicodedata
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
+    value = unicode(re.sub('[-\s]+', '-', value))
+    # ...
+    return value
+</code></pre>
+<p>There's more, but I left it out, since it doesn't address slugification, but escaping.</p>

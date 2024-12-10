@@ -1,0 +1,29 @@
+<p>There are <em>hundreds</em> of control characters in unicode.  If you are sanitizing data from the web or some other source that might contain non-ascii characters, you will need Python's <a href="http://docs.python.org/2/library/unicodedata.html" rel="nofollow noreferrer">unicodedata module</a>.  The <code>unicodedata.category(…)</code> function returns the <a href="http://www.unicode.org/reports/tr44/#GC_Values_Table" rel="nofollow noreferrer">unicode category code</a> (e.g., control character, whitespace, letter, etc.) of any character.  For control characters, the category always starts with &quot;C&quot;.</p>
+<p>This snippet removes all control characters from a string.</p>
+<pre class="lang-py prettyprint-override"><code>import unicodedata
+def remove_control_characters(s):
+    return &quot;&quot;.join(ch for ch in s if unicodedata.category(ch)[0]!=&quot;C&quot;)
+</code></pre>
+<hr />
+<p>Examples of <a href="http://www.unicode.org/reports/tr44/#GC_Values_Table" rel="nofollow noreferrer">unicode categories</a>:</p>
+<pre><code>&gt;&gt;&gt; from unicodedata import category
+&gt;&gt;&gt; category('\r')      # carriage return --&gt; Cc : control character
+'Cc'
+&gt;&gt;&gt; category('\0')      # null character ---&gt; Cc : control character
+'Cc'
+&gt;&gt;&gt; category('\t')      # tab --------------&gt; Cc : control character
+'Cc'
+&gt;&gt;&gt; category(' ')       # space ------------&gt; Zs : separator, space
+'Zs'
+&gt;&gt;&gt; category(u'\u200A') # hair space -------&gt; Zs : separator, space
+'Zs'
+&gt;&gt;&gt; category(u'\u200b') # zero width space -&gt; Cf : control character, formatting
+'Cf'
+&gt;&gt;&gt; category('A')       # letter &quot;A&quot; -------&gt; Lu : letter, uppercase
+'Lu'
+&gt;&gt;&gt; category(u'\u4e21') # 両 ---------------&gt; Lo : letter, other
+'Lo'
+&gt;&gt;&gt; category(',')       # comma  -----------&gt; Po : punctuation
+'Po'
+&gt;&gt;&gt;
+</code></pre>

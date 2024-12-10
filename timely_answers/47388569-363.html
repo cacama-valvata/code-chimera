@@ -1,0 +1,9 @@
+<p>Had same problem and this worked for me.</p>
+<p>Suppose the date column in your dataset is called &quot;date&quot;</p>
+<pre><code>import pandas as pd
+df = pd.read_csv(file_path)
+
+df['Dates'] = pd.to_datetime(df['date']).dt.date
+df['Time'] = pd.to_datetime(df['date']).dt.time
+</code></pre>
+<p>This will give you two columns &quot;Dates&quot; and &quot;Time&quot; with splited dates.</p>

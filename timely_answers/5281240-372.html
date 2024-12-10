@@ -1,0 +1,19 @@
+<p>I did some research this evening and figured this out:</p>
+<pre><code>import wave, struct
+
+waveFile = wave.open('sine.wav', 'r')
+
+length = waveFile.getnframes()
+for i in range(0,length):
+    waveData = waveFile.readframes(1)
+    data = struct.unpack(&quot;&lt;h&quot;, waveData)
+    print(int(data[0]))
+</code></pre>
+<p>Hopefully this snippet helps someone.
+Details:
+using the <a href="http://docs.python.org/library/struct.html" rel="nofollow noreferrer">struct module</a>, you can take the wave frames (which are in 2s complementary binary between -32768; 0x8000 and 32767; 0x7FFF)  This reads a MONO, 16-BIT, WAVE file.
+I found <a href="https://web.archive.org/web/20140221054954/http://home.roadrunner.com/%7Ejgglatt/tech/wave.htm" rel="nofollow noreferrer">this webpage</a> quite useful in formulating this.</p>
+<p>This snippet reads 1 frame. To read more than one frame (e.g., 13), use</p>
+<pre><code>waveData = waveFile.readframes(13)
+data = struct.unpack(&quot;&lt;13h&quot;, waveData)
+</code></pre>
