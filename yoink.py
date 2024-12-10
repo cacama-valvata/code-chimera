@@ -38,22 +38,22 @@ if __name__ == "__main__":
 
     query_args = {
         # this filter only contains answer_id, body, and body_markdown
-        "filter": "SI0J-PI2B.mFzmdq13Xemi",
+        "filter": "!nNPvSNHN_S",
         "site": "stackoverflow",
         "pagesize": 100
     }
 
     not_present = answer_ids
     for query in answer_id_queries:
-        answers_resp = requests.get(API_ENDPOINT + "/answers/" + query, params=query_args)
+        answers_resp = requests.get(API_ENDPOINT + "/posts/" + query + "/revisions", params=query_args)
         resp_json = answers_resp.json()
         present = {str(answer["answer_id"]) for answer in resp_json["items"]}
         not_present -= present
 
         for answer in resp_json["items"]:
             answer_id = answer["answer_id"]
-            with open(answers_dir / (str(answer_id) + ".md"), "w") as markdown:
-              markdown.write(answer["body_markdown"])
+            # with open(answers_dir / (str(answer_id) + ".md"), "w") as markdown:
+            #   markdown.write(answer["body_markdown"])
 
             with open(answers_dir / (str(answer_id) + ".html"), "w") as html:
               html.write(answer["body"])
