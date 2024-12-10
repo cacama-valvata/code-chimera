@@ -1,0 +1,20 @@
+<p>Addressing the above &quot;too small a task to require a library&quot; issue by a straightforward implementation:</p>
+<pre><code>def sizeof_fmt(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) &lt; 1024.0:
+            return &quot;%3.1f%s%s&quot; % (num, unit, suffix)
+        num /= 1024.0
+    return &quot;%.1f%s%s&quot; % (num, 'Yi', suffix)
+</code></pre>
+<p>Supports:</p>
+<ul>
+<li>all currently known <a href="https://en.wikipedia.org/wiki/Binary_prefix#Specific_units_of_IEC_60027-2_A.2_and_ISO.2FIEC_80000" rel="nofollow noreferrer">binary prefixes</a></li>
+<li>negative and positive numbers</li>
+<li>numbers larger than 1000 Yobibytes</li>
+<li>arbitrary units (maybe you like to count in Gibibits!)</li>
+</ul>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; sizeof_fmt(168963795964)
+'157.4GiB'
+</code></pre>
+<p>by <a href="https://web.archive.org/web/20111010015624/http://blogmag.net/blog/read/38/Print_human_readable_file_size" rel="nofollow noreferrer">Fred Cirera</a></p>

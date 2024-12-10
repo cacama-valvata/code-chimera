@@ -1,0 +1,30 @@
+<p>You're a bit confused on what you're trying to do. Types, also known as classes, are objects, like everything else in python. When you write <code>int</code> in your programs, you're referencing a global variable called <code>int</code> which happens to be a class. What you're trying to do is not &quot;cast string to type&quot;, it's accessing builtin variables by name.</p>
+<p>Once you understand that, the solution is easy to see:</p>
+<pre><code>def get_builtin(name):
+    return getattr(__builtins__, name)
+</code></pre>
+<hr />
+<p>If you <em>really</em> wanted to turn a type name into a type object, here's how you'd do it. I use <code>deque</code> to do a breadth-first tree traversal without recursion.</p>
+<pre><code>def gettype(name):
+    from collections import deque
+    # q is short for &quot;queue&quot;, here
+    q = deque([object])
+    while q:
+        t = q.popleft()
+        if t.__name__ == name:
+            return t
+        else:
+            print 'not', t
+
+        try:
+            # Keep looking!
+            q.extend(t.__subclasses__())
+        except TypeError:
+            # type.__subclasses__ needs an argument, for whatever reason.
+            if t is type:
+                continue
+            else:
+                raise
+    else:
+        raise ValueError('No such type: %r' % name)
+</code></pre>

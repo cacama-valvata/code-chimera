@@ -1,0 +1,15 @@
+<p>Here is a single formula that avoids all the case logic. (I happen to be working in JS right now, so here's a JS implementation). Let <code>rect = {max:{x:_, y:_}, min:{x:_, y:_}}</code> and <code>p={x:_, y:_}</code></p>
+<pre><code>function distance(rect, p) {
+  var dx = Math.max(rect.min.x - p.x, 0, p.x - rect.max.x);
+  var dy = Math.max(rect.min.y - p.y, 0, p.y - rect.max.y);
+  return Math.sqrt(dx*dx + dy*dy);
+}
+</code></pre>
+<p>Explanation:
+This breaks down the problem into calculating the x distance <code>dx</code> and the y distance <code>dy</code>. It then uses distance formula.</p>
+<p>For calculating <code>dx</code>, here is how that works. (<code>dy</code> is analogous)</p>
+<p>Look at the tuple being provided to the max function: <code>(min-p, 0, p-max)</code>. Let's designate this tuple <code>(a,b,c)</code>.</p>
+<p>If p is left of min, then we have p &lt; min &lt; max, which means the tuple will evaluate to <code>(+,0,-)</code>, and so the max function will correctly return <code>a = min - p</code>.</p>
+<p>If p is between min and max, then we have min &lt; p &lt; max, which means the tuple will evaluate to <code>(-,0,-)</code>. So again, the max function will correctly return <code>b = 0</code>.</p>
+<p>Lastly, if p is to the right of max, then we have, min &lt; max &lt; p, and the tuple evaluates to <code>(-,0,+)</code>. Once again, Math.max correctly returns <code>c = p - max</code>.</p>
+<p>So it turns out all the case logic is taken care of by Math.max, which leads to a nice 3-line, control-flow-free function.</p>

@@ -1,0 +1,12 @@
+<p>As shown in the other answer the connection must be in autocommit mode. Another way of setting it using <code>psycopg2</code> is through the <a href="http://initd.org/psycopg/docs/connection.html#connection.autocommit" rel="nofollow noreferrer"><code>autocommit</code></a> attribute:</p>
+<pre><code>import psycopg2
+from psycopg2 import sql
+
+con = psycopg2.connect(...)
+con.autocommit = True
+
+cur = con.cursor()
+# sql.SQL and sql.Identifier are needed to avoid SQL injection attacks.
+cur.execute(sql.SQL('CREATE DATABASE {};').format(
+    sql.Identifier(self.db_name)))
+</code></pre>

@@ -1,0 +1,37 @@
+<p>If you want to group the <code>td</code> values by their <code>tr</code>, I would separate the xpath into two queries. One query selects the <code>&lt;tr&gt;</code> nodes and a second query selects the <code>&lt;td&gt;</code> childs of that node.</p>
+<p>If you put that into a loop it can look like this:</p>
+<pre><code>&lt;?php
+
+$html = &lt;&lt;&lt;EOF
+&lt;div id=&quot;box&quot;&gt;
+
+    ... Your HTML comes here
+&lt;/tr&gt;
+EOF;
+
+$url = '';
+$doc = new DOMDocument();
+$doc-&gt;preserveWhiteSpace = FALSE;
+@$doc-&gt;loadHTML($html);
+$xpath = new DOMXpath ($doc);
+$expresion = &quot;//div[@id='box']//tr&quot;;
+$trs = $xpath-&gt;evaluate($expresion);
+foreach ($trs as $tr)
+{
+    $tdvals = array();
+    foreach($xpath-&gt;query('td', $tr) as $td) {
+        /* Skip the td with the empty text value */
+        if(trim($td-&gt;nodeValue) !== '') {
+            $tdvals []= $td-&gt;nodeValue;
+        }
+    }
+    echo implode(',', $tdvals) . PHP_EOL;
+}
+</code></pre>
+<p>which outputs:</p>
+<pre class="lang-none prettyprint-override"><code>1,45,62
+2,35,47
+3,63,58
+</code></pre>
+<hr />
+<p>One another thing. In your example you are using <code>file_get_contents()</code> to load the HTML. Note that you can use <code>DOMDocument::loadHTMLFile()</code> to load (remote) files.</p>

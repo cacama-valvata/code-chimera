@@ -1,0 +1,49 @@
+<p>Here is a decorator to catch one specific warning to apply to your method :</p>
+<pre><code>import functools
+import warnings
+from typing import Type
+
+
+def ignore_warning(warning: Type[Warning]):
+    &quot;&quot;&quot;
+    Ignore a given warning occurring during method execution.
+
+    Args:
+        warning (Warning): warning type to ignore.
+
+    Returns:
+        the inner function
+
+    &quot;&quot;&quot;
+
+    def inner(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.filterwarnings(&quot;ignore&quot;, category= warning)
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return inner
+
+
+def my_method_no_decorator(*args, **kwargs) -&gt; bool:
+    warnings.warn(&quot;WARNING&quot;, UserWarning)
+
+    return True
+
+@ignore_warning(UserWarning)
+def my_method_decorator(*args, **kwargs) -&gt; bool:
+    warnings.warn(&quot;WARNING&quot;, UserWarning)
+
+    return True
+
+
+my_method_no_decorator()
+&lt;input&gt;:2: UserWarning: WARNING
+True
+
+my_method_decorator()
+True
+</code></pre>

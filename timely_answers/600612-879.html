@@ -1,0 +1,23 @@
+<p><code>mkdir -p</code> functionality as follows:</p>
+<pre><code>import errno    
+import os
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python &gt;2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+</code></pre>
+<h3>Update</h3>
+<p>For Python ≥ 3.2, <code>os.makedirs</code> has an <a href="http://docs.python.org/3/library/os.html?highlight=makedirs#os.makedirs" rel="nofollow noreferrer">optional third argument</a> <code>exist_ok</code> that, when true, enables the <code>mkdir -p</code> functionality —<em>unless</em> <code>mode</code> is provided and the existing directory has different permissions than the intended ones; in that case, <code>OSError</code> is raised as previously.</p>
+<h3>Update 2</h3>
+<p>For Python ≥ 3.5, there is also <a href="https://docs.python.org/3.6/library/pathlib.html#pathlib.Path.mkdir" rel="nofollow noreferrer"><code>pathlib.Path.mkdir</code></a>:</p>
+<pre><code>import pathlib
+
+pathlib.Path(&quot;/tmp/path/to/desired/directory&quot;).mkdir(parents=True, exist_ok=True)
+</code></pre>
+<p>The <code>exist_ok</code> parameter was added in Python 3.5.</p>

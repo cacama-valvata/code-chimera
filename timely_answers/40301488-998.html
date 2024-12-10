@@ -1,0 +1,122 @@
+<p>Here is another solution:</p>
+<p>This decorator (a <a href="https://stackoverflow.com/questions/739654">decorator factory</a> in fact) allow you to give a <strong>reason</strong> message. It is also more useful to help the developer to diagnose the problem by giving the source <strong>filename</strong> and <strong>line number</strong>.</p>
+<p><strong>EDIT</strong>: This code use Zero's recommendation: it replace <code>warnings.warn_explicit</code> line by <code>warnings.warn(msg, category=DeprecationWarning, stacklevel=2)</code>,
+which prints the function call site rather than the function definition site. It makes debugging easier.</p>
+<p><strong>EDIT2</strong>: This version allow the developper to specify an optional &quot;reason&quot; message.</p>
+<pre><code>import functools
+import inspect
+import warnings
+
+string_types = (type(b''), type(u''))
+
+
+def deprecated(reason):
+    &quot;&quot;&quot;
+    This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used.
+    &quot;&quot;&quot;
+
+    if isinstance(reason, string_types):
+
+        # The @deprecated is used with a 'reason'.
+        #
+        # .. code-block:: python
+        #
+        #    @deprecated(&quot;please, use another function&quot;)
+        #    def old_function(x, y):
+        #      pass
+
+        def decorator(func1):
+
+            if inspect.isclass(func1):
+                fmt1 = &quot;Call to deprecated class {name} ({reason}).&quot;
+            else:
+                fmt1 = &quot;Call to deprecated function {name} ({reason}).&quot;
+
+            @functools.wraps(func1)
+            def new_func1(*args, **kwargs):
+                warnings.simplefilter('always', DeprecationWarning)
+                warnings.warn(
+                    fmt1.format(name=func1.__name__, reason=reason),
+                    category=DeprecationWarning,
+                    stacklevel=2
+                )
+                warnings.simplefilter('default', DeprecationWarning)
+                return func1(*args, **kwargs)
+
+            return new_func1
+
+        return decorator
+
+    elif inspect.isclass(reason) or inspect.isfunction(reason):
+
+        # The @deprecated is used without any 'reason'.
+        #
+        # .. code-block:: python
+        #
+        #    @deprecated
+        #    def old_function(x, y):
+        #      pass
+
+        func2 = reason
+
+        if inspect.isclass(func2):
+            fmt2 = &quot;Call to deprecated class {name}.&quot;
+        else:
+            fmt2 = &quot;Call to deprecated function {name}.&quot;
+
+        @functools.wraps(func2)
+        def new_func2(*args, **kwargs):
+            warnings.simplefilter('always', DeprecationWarning)
+            warnings.warn(
+                fmt2.format(name=func2.__name__),
+                category=DeprecationWarning,
+                stacklevel=2
+            )
+            warnings.simplefilter('default', DeprecationWarning)
+            return func2(*args, **kwargs)
+
+        return new_func2
+
+    else:
+        raise TypeError(repr(type(reason)))
+</code></pre>
+<p>You can use this decorator for <strong>functions</strong>, <strong>methods</strong> and <strong>classes</strong>.</p>
+<p>Here is a simple example:</p>
+<pre><code>@deprecated(&quot;use another function&quot;)
+def some_old_function(x, y):
+    return x + y
+
+
+class SomeClass(object):
+    @deprecated(&quot;use another method&quot;)
+    def some_old_method(self, x, y):
+        return x + y
+
+
+@deprecated(&quot;use another class&quot;)
+class SomeOldClass(object):
+    pass
+
+
+some_old_function(5, 3)
+SomeClass().some_old_method(8, 9)
+SomeOldClass()
+</code></pre>
+<p>You'll get:</p>
+<pre><code>deprecated_example.py:59: DeprecationWarning: Call to deprecated function or method some_old_function (use another function).
+  some_old_function(5, 3)
+deprecated_example.py:60: DeprecationWarning: Call to deprecated function or method some_old_method (use another method).
+  SomeClass().some_old_method(8, 9)
+deprecated_example.py:61: DeprecationWarning: Call to deprecated class SomeOldClass (use another class).
+  SomeOldClass()
+</code></pre>
+<p><strong>EDIT3:</strong> This decorator is now part of the Deprecated library:</p>
+<ul>
+<li><a href="https://pypi.python.org/pypi/deprecated" rel="nofollow noreferrer">Python package index (PyPi)</a></li>
+<li><a href="https://github.com/tantale/deprecated" rel="nofollow noreferrer">GitHub website</a></li>
+<li><a href="http://deprecated.readthedocs.io/en/latest/" rel="nofollow noreferrer">Read The Docs</a></li>
+<li><a href="https://twitter.com/laporte_laurent/status/1154836786323099648?s=20" rel="nofollow noreferrer">Twitter</a></li>
+</ul>
+<p>New stable release v1.2.13 🎉</p>

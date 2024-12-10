@@ -1,0 +1,16 @@
+<p>The <a href="https://docs.python.org/2/library/time.html#time.time" rel="nofollow noreferrer"><code>time.time()</code></a> function returns the number of seconds since the epoch, as seconds.  Note that the &quot;epoch&quot; is defined as the start of January 1st, 1970 in UTC.  So the epoch is defined in terms of UTC and establishes a global moment in time.  No matter where you are &quot;seconds past epoch&quot; (time.time()) returns the same value at the same moment.</p>
+<p>Here is some sample output I ran on my computer, converting it to a string as well.</p>
+<pre><code>Python 2.7.3 (default, Apr 24 2012, 00:00:54) 
+[GCC 4.7.0 20120414 (prerelease)] on linux2
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; import time
+&gt;&gt;&gt; ts = time.time()
+&gt;&gt;&gt; print ts
+1355563265.81
+&gt;&gt;&gt; import datetime
+&gt;&gt;&gt; st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+&gt;&gt;&gt; print st
+2012-12-15 01:21:05
+&gt;&gt;&gt;
+</code></pre>
+<p>The <code>ts</code> variable is the time returned in seconds.  I then converted it to a string using the <code>datetime</code> library making it a string that is human readable.</p>

@@ -1,0 +1,9 @@
+<p>Modify your <code>center</code> method to be as follows:</p>
+<pre><code>def center(self):
+    frameGm = self.frameGeometry()
+    screen = QtGui.QApplication.desktop().screenNumber(QtGui.QApplication.desktop().cursor().pos())
+    centerPoint = QtGui.QApplication.desktop().screenGeometry(screen).center()
+    frameGm.moveCenter(centerPoint)
+    self.move(frameGm.topLeft())
+</code></pre>
+<p>This function is based on where the mouse point is located. It uses the <a href="http://pyqt.sourceforge.net/Docs/PyQt4/qdesktopwidget.html#screenNumber-2" rel="nofollow noreferrer">screenNumber</a> function to determine which screen the mouse is current active on. It then finds the <a href="http://pyqt.sourceforge.net/Docs/PyQt4/qdesktopwidget.html#screenGeometry" rel="nofollow noreferrer">screenGeometry</a> of that monitor and the center point of that screen. Using this method, you should be able to place the window in the center of a screen even if monitor resolutions are different.</p>

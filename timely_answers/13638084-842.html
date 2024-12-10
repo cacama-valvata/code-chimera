@@ -1,0 +1,20 @@
+<p>To people reading in 2022 and beyond: you should probably check out the currently next-highest-rated answer here: <a href="https://stackoverflow.com/a/35804945/1691778">https://stackoverflow.com/a/35804945/1691778</a></p>
+<p>My original answer is below.</p>
+<p>--</p>
+<p>@Eric S.</p>
+<p>Eric S.'s answer is excellent, but I learned by experimentation that this will always cause messages logged at the new debug level to be printed -- regardless of what the log level is set to. So if you make a new level number of <code>9</code>, if you call <code>setLevel(50)</code>, the <strong>lower level</strong> messages will erroneously be printed.</p>
+<blockquote>
+<p>To prevent that from happening, you need another line inside the &quot;debugv&quot; function to check if the logging level in question is actually enabled.</p>
+</blockquote>
+<p>Fixed example that checks if the logging level is enabled:</p>
+<pre><code>import logging
+DEBUG_LEVELV_NUM = 9 
+logging.addLevelName(DEBUG_LEVELV_NUM, &quot;DEBUGV&quot;)
+def debugv(self, message, *args, **kws):
+    if self.isEnabledFor(DEBUG_LEVELV_NUM):
+        # Yes, logger takes its '*args' as 'args'.
+        self._log(DEBUG_LEVELV_NUM, message, args, **kws) 
+logging.Logger.debugv = debugv
+</code></pre>
+<p>If you look at the code for <code>class Logger</code> in <code>logging.__init__.py</code> for Python 2.7, this is what all the standard log functions do (.critical, .debug, etc.).</p>
+<p>I apparently can't post replies to others' answers for lack of reputation... hopefully Eric will update his post if he sees this. =)</p>

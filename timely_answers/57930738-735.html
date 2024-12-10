@@ -1,0 +1,83 @@
+<p><em>After some work I am able to respond to my own question. Below, I make my own interpretations/analysis, but perhaps misunderstand what actually happens in some steps. Nevertheless, below works as intended and is a complete answer to the question.</em></p>
+<h1>1. Given no native (model) support for BinaryField within DRF, first step is to construct your own field:</h1>
+<pre><code>class MyBinaryField(serializers.Field):
+    def to_internal_value(self, obj):
+        return base64.b64decode(obj)
+'''
+to_internal_value is obj to database and it seems DRF 
+sees the POST as a string (despite being encoded as bytes, 
+therefore, by decode the string, you get to 
+the underlying bytes data (pickle.dumps).   
+'''
+
+    def to_representation(self, value):
+        return base64.b64encode(value)
+
+'''
+to_representation is the visual feedback, and in order 
+for being able to see the byte data one need to decode it.   
+'''
+</code></pre>
+<h1>2. Once you got your new Field, you implement it into a Serializer,</h1>
+<h1>and define methods.</h1>
+<h1>Please note that <code>serializers.ModelSerializer</code> wont work,</h1>
+<h1>so you need to use <code>serializers.Serializer</code></h1>
+<pre><code>class DataFrameSerializer(serializers.Serializer):
+    serializer_field_mapping = (
+        serializers.ModelSerializer.serializer_field_mapping.copy()
+    )
+    serializer_field_mapping[models.BinaryField] = MyBinaryField
+
+    df_object = MyBinaryField()
+
+    def create(self, validated_data):
+        &quot;&quot;&quot;
+        Create and return a new `DataFrame' instance, given the validated data.
+        &quot;&quot;&quot;
+        return DataFrame.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        &quot;&quot;&quot;
+        Update and return an existing 'DataFrame' instance, given the validated data.
+        &quot;&quot;&quot;
+        instance.df_object = validated_data.get('df_object', instance.df_object)
+        instance.save()
+        return instance
+</code></pre>
+<h1>3. Finally, you define your view</h1>
+<pre><code>class DataFrameView(viewsets.ModelViewSet):
+    queryset = DataFrame.objects.all()
+    serializer_class = DataFrameSerializer
+</code></pre>
+<h1>4. Then, you can access and POST data through the API</h1>
+<pre><code>import pickle
+import requests
+import base64
+import pandas as pd
+
+df = pd.DataFrame({'a': [0, 1, 2, 3]})
+pickbytes = pickle.dumps(df)
+b64_pickbytes = base64.b64encode(pickbytes)
+
+url = 'http://localhost:8000/api/DataFrame/'
+payload = {'df_object':b64_pickbytes}
+r = requests.post(url=url, data=payload)
+</code></pre>
+<h1>5. To retreive the data and re-create the DataFrame</h1>
+<pre><code> &gt;&gt;&gt; new = DataFrame.objects.first()
+ &gt;&gt;&gt; byt = new.df_object
+ &gt;&gt;&gt; s = pickle.loads(byt)
+ &gt;&gt;&gt; s
+    a
+ 0  0
+ 1  1
+ 2  2
+ 3  3
+</code></pre>
+<p>Helpful posts and docs related to the question:</p>
+<pre><code>[1] https://stackoverflow.com/a/33432733/10778349
+[2] https://stackoverflow.com/a/31624941/10778349
+[3] https://docs.python.org/3/library/stdtypes.html#memoryview
+[4] https://www.django-rest-framework.org/api-guide/fields/#custom-fields
+[5] https://www.django-rest-framework.org/tutorial/1-serialization/
+</code></pre>

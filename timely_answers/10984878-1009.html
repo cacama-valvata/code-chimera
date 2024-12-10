@@ -1,0 +1,14 @@
+<p>The list comprehension is the most &quot;pythonic&quot; way.</p>
+<p>The most &quot;numpythonic&quot; way would be:</p>
+<pre><code>&gt;&gt;&gt; data = np.array([['a','b'],['c','d']])
+# a 2D view
+&gt;&gt;&gt; data.view('S2')
+array([['ab'],
+       ['cd']], 
+      dtype='|S2')
+# or maybe a 1D view ...fastest solution:
+&gt;&gt;&gt; data.view('S2').ravel()
+array(['ab', 'cd'], 
+      dtype='|S2')
+</code></pre>
+<p>No looping, no list comprehension, not even a copy.  The buffer just sits there unchanged with a different &quot;view&quot; so this is the fastest solution available.</p>

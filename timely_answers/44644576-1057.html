@@ -1,0 +1,42 @@
+<p>The trick is to explicitly add an annotation to the <code>cls</code> parameter, in combination with <code>TypeVar</code>, for <a href="http://mypy.readthedocs.io/en/stable/generics.html" rel="nofollow noreferrer">generics</a>, and <code>Type</code>, to <a href="http://mypy.readthedocs.io/en/stable/kinds_of_types.html#the-type-of-class-objects" rel="nofollow noreferrer">represent a class rather than the instance itself</a>, like so:</p>
+<pre><code>from typing import TypeVar, Type
+
+# Create a generic variable that can be 'Parent', or any subclass.
+T = TypeVar('T', bound='Parent')
+
+class Parent:
+    def __init__(self, bar: str) -&gt; None:
+        self.bar = bar
+
+    @classmethod
+    def with_stuff_appended(cls: Type[T], bar: str) -&gt; T:
+        # We annotate 'cls' with a typevar so that we can
+        # type our return type more precisely
+        return cls(bar + &quot;stuff&quot;)
+
+class Child(Parent):
+    # If you're going to redefine __init__, make sure it
+    # has a signature that's compatible with the Parent's __init__,
+    # since mypy currently doesn't check for that.
+
+    def child_only(self) -&gt; int:
+        return 3
+
+# Mypy correctly infers that p is of type 'Parent',
+# and c is of type 'Child'.
+p = Parent.with_stuff_appended(&quot;10&quot;)
+c = Child.with_stuff_appended(&quot;20&quot;)
+
+# We can verify this ourself by using the special 'reveal_type'
+# function. Be sure to delete these lines before running your
+# code -- this function is something only mypy understands
+# (it's meant to help with debugging your types).
+reveal_type(p)  # Revealed type is 'test.Parent*'
+reveal_type(c)  # Revealed type is 'test.Child*'
+
+# So, these all typecheck
+print(p.bar)
+print(c.bar)
+print(c.child_only())
+</code></pre>
+<p>Normally, you can leave <code>cls</code> (and <code>self</code>) unannotated, but if you need to refer to the specific subclass, you can add an <a href="http://mypy.readthedocs.io/en/stable/generics.html#generic-methods-and-generic-self" rel="nofollow noreferrer">explicit annotation</a>. Note that this feature is still experimental and may be buggy in some cases. You may also need to use the latest version of mypy cloned from Github, rather then what's available on pypi -- I don't remember if that version supports this feature for classmethods.</p>

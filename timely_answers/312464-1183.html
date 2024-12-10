@@ -1,0 +1,32 @@
+<p>Here's a generator that yields the chunks you want:</p>
+<pre><code>def chunks(l, n):
+    &quot;&quot;&quot;Yield successive n-sized chunks from l.&quot;&quot;&quot;
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+</code></pre>
+<hr />
+<pre><code>import pprint
+pprint.pprint(list(chunks(range(10, 75), 10)))
+[[10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+ [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+ [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
+ [40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+ [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
+ [60, 61, 62, 63, 64, 65, 66, 67, 68, 69],
+ [70, 71, 72, 73, 74]]
+</code></pre>
+<hr />
+<p>If you're using Python 2, you should use <code>xrange()</code> instead of <code>range()</code>:</p>
+<pre><code>def chunks(l, n):
+    &quot;&quot;&quot;Yield successive n-sized chunks from l.&quot;&quot;&quot;
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
+        
+</code></pre>
+<hr />
+<p>Also you can simply use list comprehension instead of write a function. Python 3:</p>
+<pre><code>[l[i:i + n] for i in range(0, len(l), n)]
+</code></pre>
+<p>Python 2 version:</p>
+<pre><code>[l[i:i + n] for i in xrange(0, len(l), n)]
+</code></pre>

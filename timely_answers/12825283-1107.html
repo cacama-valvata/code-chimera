@@ -1,0 +1,12 @@
+<p>There is an already existing filter called <a href="http://jinja.pocoo.org/docs/templates/#replace" rel="nofollow noreferrer"><code>replace</code></a> that you can use if you don't actually need a regular expression.  Otherwise, you can register a <a href="http://jinja.pocoo.org/docs/api/#custom-filters" rel="nofollow noreferrer">custom filter</a>:</p>
+<pre><code>{# Replace method #}
+{{my_str|replace(&quot;some text&quot;, &quot;&quot;)|replace(&quot; &quot;, &quot;_&quot;)}}
+</code></pre>
+<p> </p>
+<pre><code># Custom filter method
+def regex_replace(s, find, replace):
+    &quot;&quot;&quot;A non-optimal implementation of a regex filter&quot;&quot;&quot;
+    return re.sub(find, replace, s)
+
+jinja_environment.filters['regex_replace'] = regex_replace
+</code></pre>

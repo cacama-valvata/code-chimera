@@ -1,0 +1,71 @@
+<h2>Use a Metaclass</h2>
+<p>I would recommend <strong>Method #2</strong>, but you're better off using a <strong>metaclass</strong> than a base class. Here is a sample implementation:</p>
+<pre><code>class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+        
+class Logger(object):
+    __metaclass__ = Singleton
+</code></pre>
+<p>Or in Python3</p>
+<pre><code>class Logger(metaclass=Singleton):
+    pass
+</code></pre>
+<p>If you want to run <code>__init__</code> every time the class is called, add</p>
+<pre><code>        else:
+            cls._instances[cls].__init__(*args, **kwargs)
+</code></pre>
+<p>to the <code>if</code> statement in <code>Singleton.__call__</code>.</p>
+<p>A few words about metaclasses. A metaclass is the <strong>class of a class</strong>; that is, a class is an <strong>instance of its metaclass</strong>. You find the metaclass of an object in Python with <code>type(obj)</code>. Normal new-style classes are of type <code>type</code>. <code>Logger</code> in the code above will be of type <code>class 'your_module.Singleton'</code>, just as the (only) instance of <code>Logger</code> will be of type <code>class 'your_module.Logger'</code>. When you call logger with <code>Logger()</code>, Python first asks the metaclass of <code>Logger</code>, <code>Singleton</code>, what to do, allowing instance creation to be pre-empted. This process is the same as Python asking a class what to do by calling <code>__getattr__</code> when you reference one of it's attributes by doing <code>myclass.attribute</code>.</p>
+<p>A metaclass essentially decides <strong>what the definition of a class means</strong> and how to implement that definition. See for example <a href="http://code.activestate.com/recipes/498149/" rel="nofollow noreferrer">http://code.activestate.com/recipes/498149/</a>, which essentially recreates C-style <code>struct</code>s in Python using metaclasses. The thread <a href="https://stackoverflow.com/questions/392160/what-are-your-concrete-use-cases-for-metaclasses-in-python">https://stackoverflow.com/questions/392160/what-are-your-concrete-use-cases-for-metaclasses-in-python</a> also provides some examples, they generally seem to be related to declarative programming, especially as used in ORMs.</p>
+<p>In this situation, if you use your <strong>Method #2</strong>, and a subclass defines a <code>__new__</code> method, it will be <strong>executed every time</strong> you call <code>SubClassOfSingleton()</code> -- because it is responsible for calling the method that returns the stored instance. With a metaclass, it will <strong>only be called once</strong>, when the only instance is created. You want to <strong>customize what it means to call the class</strong>, which is decided by it's type.</p>
+<p>In general, it <strong>makes sense</strong> to use a metaclass to implement a singleton. A singleton is special because is <strong>created only once</strong>, and a metaclass is the way you customize the <strong>creation of a class</strong>. Using a metaclass gives you <strong>more control</strong> in case you need to customize the singleton class definitions in other ways.</p>
+<p>Your singletons <strong>won't need multiple inheritance</strong> (because the metaclass is not a base class), but for <strong>subclasses of the created class</strong> that use multiple inheritance, you need to make sure the singleton class is the <strong>first / leftmost</strong> one with a metaclass that redefines <code>__call__</code> This is very unlikely to be an issue. The instance dict is <strong>not in the instance's namespace</strong> so it won't accidentally overwrite it.</p>
+<p>You will also hear that the singleton pattern violates the &quot;Single Responsibility Principle&quot; -- each class should do <strong>only one thing</strong>. That way you don't have to worry about messing up one thing the code does if you need to change another, because they are separate and encapsulated. The metaclass implementation <strong>passes this test</strong>. The metaclass is responsible for <strong>enforcing the pattern</strong> and the created class and subclasses need not be <strong>aware that they are singletons</strong>. <strong>Method #1</strong> fails this test, as you noted with &quot;MyClass itself is a a function, not a class, so you cannot call class methods from it.&quot;</p>
+<h1>Python 2 and 3 Compatible Version</h1>
+<p>Writing something that works in both Python2 and 3 requires using a slightly more complicated scheme. Since metaclasses are usually subclasses of type <code>type</code>, it's possible to use one to dynamically create an intermediary base class at run time with it as its metaclass and then use <em>that</em> as the baseclass of the public <code>Singleton</code> base class. It's harder to explain than to do, as illustrated next:</p>
+<pre><code># works in Python 2 &amp; 3
+class _Singleton(type):
+    &quot;&quot;&quot; A metaclass that creates a Singleton base class when called. &quot;&quot;&quot;
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Singleton(_Singleton('SingletonMeta', (object,), {})): pass
+
+class Logger(Singleton):
+    pass
+</code></pre>
+<p>An ironic aspect of this approach is that it's using subclassing to implement a metaclass. One possible advantage is that, unlike with a pure metaclass, <code>isinstance(inst, Singleton)</code> will return <code>True</code>.</p>
+<h2>Corrections</h2>
+<p>On another topic, you've probably already noticed this, but the base class implementation in your original post is wrong. <code>_instances</code> needs to be <strong>referenced on the class</strong>, you need to use <code>super()</code> or you're <strong>recursing</strong>, and <code>__new__</code> is actually a static method that you have to <strong>pass the class to</strong>, not a class method, as the actual class <strong>hasn't been created</strong> yet when it is called. All of these things will be true for a metaclass implementation as well.</p>
+<pre><code>class Singleton(object):
+  _instances = {}
+  def __new__(class_, *args, **kwargs):
+    if class_ not in class_._instances:
+        class_._instances[class_] = super(Singleton, class_).__new__(class_, *args, **kwargs)
+    return class_._instances[class_]
+
+class MyClass(Singleton):
+  pass
+
+c = MyClass()
+</code></pre>
+<h2>Decorator Returning A Class</h2>
+<p>I originally was writing a comment but it was too long, so I'll add this here. <strong>Method #4</strong> is better than the other decorator version, but it's more code than needed for a singleton, and it's not as clear what it does.</p>
+<p>The main problems stem from the class being it's own base class. First, isn't it weird to have a class be a subclass of a nearly identical class with the same name that exists only in its <code>__class__</code> attribute? This also means that you can't define <strong>any methods that call the method of the same name on their base class</strong> with <code>super()</code> because they will recurse. This means your class can't customize <code>__new__</code>, and can't derive from any classes that need <code>__init__</code> called on them.</p>
+<h2>When to use the singleton pattern</h2>
+<p>Your use case is <strong>one of the better examples</strong> of wanting to use a singleton. You say in one of the comments &quot;To me logging has always seemed a natural candidate for Singletons.&quot; You're <strong>absolutely right</strong>.</p>
+<p>When people say singletons are bad, the most common reason is they are <strong>implicit shared state</strong>. While with global variables and top-level module imports are <strong>explicit</strong> shared state, other objects that are passed around are generally instantiated. This is a good point, <strong>with two exceptions</strong>.</p>
+<p>The first, and one that gets mentioned in various places, is when the singletons are <strong>constant</strong>. Use of global constants, especially enums, is widely accepted, and considered sane because no matter what, <strong>none of the users can mess them up for any other user</strong>. This is equally true for a constant singleton.</p>
+<p>The second exception, which get mentioned less, is the opposite -- when the singleton is <strong>only a data sink</strong>, not a data source (directly or indirectly). This is why loggers feel like a &quot;natural&quot; use for singletons. As the various users are <strong>not changing the loggers</strong> in ways other users will care about, there is <strong>not really shared state</strong>. This negates the primary argument against the singleton pattern, and makes them a reasonable choice because of their <strong>ease of use</strong> for the task.</p>
+<p>Here is a quote from <a href="http://googletesting.blogspot.com/2008/08/root-cause-of-singletons.html" rel="nofollow noreferrer">http://googletesting.blogspot.com/2008/08/root-cause-of-singletons.html</a>:</p>
+<blockquote>
+<p>Now, there is one kind of Singleton which is OK. That is a singleton where all of the reachable objects are immutable. If all objects are immutable than Singleton has no global state, as everything is constant. But it is so easy to turn this kind of singleton into mutable one, it is very slippery slope. Therefore, I am against these Singletons too, not because they are bad, but because it is very easy for them to go bad. (As a side note Java enumeration are just these kind of singletons. As long as you don't put state into your enumeration you are OK, so please don't.)</p>
+<p>The other kind of Singletons, which are semi-acceptable are those which don't effect the execution of your code, They have no &quot;side effects&quot;. Logging is perfect example. It is loaded with Singletons and global state. It is acceptable (as in it will not hurt you) because your application does not behave any different whether or not a given logger is enabled. The information here flows one way: From your application into the logger. Even thought loggers are global state since no information flows from loggers into your application, loggers are acceptable. You should still inject your logger if you want your test to assert that something is getting logged, but in general Loggers are not harmful despite being full of state.</p>
+</blockquote>

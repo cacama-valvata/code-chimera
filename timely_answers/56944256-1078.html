@@ -1,0 +1,53 @@
+<h3>A Python 3 solution, with no additional packages required</h3>
+<p><em><strong>Note to the community:</strong> please do not edit the answer. I know its not the most optimal way in term of coding, but the easiest to understand and most readable way to get the essence of the process</em></p>
+<h3>1. Define a class</h3>
+<pre class="lang-py prettyprint-override"><code>import logging
+
+class CustomFormatter(logging.Formatter):
+
+    grey = &quot;\x1b[38;20m&quot;
+    yellow = &quot;\x1b[33;20m&quot;
+    red = &quot;\x1b[31;20m&quot;
+    bold_red = &quot;\x1b[31;1m&quot;
+    reset = &quot;\x1b[0m&quot;
+    format = &quot;%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)&quot;
+
+    FORMATS = {
+        logging.DEBUG: grey + format + reset,
+        logging.INFO: grey + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: bold_red + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+</code></pre>
+<h3>2. Instantiate logger:</h3>
+<pre class="lang-py prettyprint-override"><code># create logger with 'spam_application'
+logger = logging.getLogger(&quot;My_app&quot;)
+logger.setLevel(logging.DEBUG)
+
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+ch.setFormatter(CustomFormatter())
+
+logger.addHandler(ch)
+</code></pre>
+<h3>3. And use:</h3>
+<pre class="lang-py prettyprint-override"><code>logger.debug(&quot;debug message&quot;)
+logger.info(&quot;info message&quot;)
+logger.warning(&quot;warning message&quot;)
+logger.error(&quot;error message&quot;)
+logger.critical(&quot;critical message&quot;)
+</code></pre>
+<h3>Result:</h3>
+<p><a href="https://i.sstatic.net/klCcc.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/klCcc.png" alt="enter image description here" /></a></p>
+<h3>The full color scheme:</h3>
+<p><a href="https://i.sstatic.net/iZU5S.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/iZU5S.png" alt="enter image description here" /></a></p>
+<h4>For Windows:</h4>
+<p>This solution works on Mac OS, IDE terminals. Looks like the Windows command prompt doesn't have colors at all by default. Here are instructions on how to enable them, which I haven't try <a href="https://www.howtogeek.com/322432/how-to-customize-your-command-prompts-color-scheme-with-microsofts-colortool/" rel="nofollow noreferrer">https://www.howtogeek.com/322432/how-to-customize-your-command-prompts-color-scheme-with-microsofts-colortool/</a></p>

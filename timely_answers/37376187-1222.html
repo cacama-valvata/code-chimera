@@ -1,0 +1,19 @@
+<p>IIUC, you could do something like:</p>
+<pre><code>def get_nearest(points, coord):
+    &quot;&quot;&quot;Return closest point to coord from points&quot;&quot;&quot;
+    dists = [(pow(point[0] - coord[0], 2) + pow(point[1] - coord[1], 2), point)
+              for point in points]              # list of (dist, point) tuples
+    nearest = min(dists)
+    return nearest[1]  # return point only
+
+next_point = points.pop(0)  # get first point
+line_path = []
+line_path.append(next_point)
+
+while len(points) &gt; 1:
+    next_point = get_nearest(points, next_point)
+    line_path.append(next_point)
+    points.remove(next_point)
+
+line_path.extend(points)  # add last point
+</code></pre>

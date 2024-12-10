@@ -1,0 +1,12 @@
+<p>If you want to &quot;rename&quot; an op, there is no way to do that directly, because a <code>tf.Operation</code> (or <code>tf.Tensor</code>) is immutable once it has been created. The typical way to rename an op is therefore to use <code>tf.identity()</code>, which has almost no runtime cost:</p>
+<pre><code>with tf.name_scope(&quot;abc&quot;):
+    z = x + y
+    z = tf.identity(z, name=&quot;z&quot;)
+</code></pre>
+<p>Note however that the recommended way to structure your name scope is to assign the name of the scope itself to the &quot;output&quot; from the scope (if there is a single output op):</p>
+<pre><code>with tf.name_scope(&quot;abc&quot;) as scope:
+    # z will get the name &quot;abc&quot;. x and y will have names in &quot;abc/...&quot; if they
+    # are converted to tensors.
+    z = tf.add(x, y, name=scope)
+</code></pre>
+<p>This is how the TensorFlow libraries are structured, and it tends to give the best visualization in TensorBoard.</p>

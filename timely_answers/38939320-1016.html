@@ -1,0 +1,18 @@
+<p>Here is the final cut for Linux/Windows Python 2/3 compatible code to read data from stdin without corruption:</p>
+<pre><code>import sys
+
+PY3K = sys.version_info &gt;= (3, 0)
+
+if PY3K:
+    source = sys.stdin.buffer
+else:
+    # Python 2 on Windows opens sys.stdin in text mode, and
+    # binary data that read from it becomes corrupted on \r\n
+    if sys.platform == &quot;win32&quot;:
+        # set sys.stdin to binary mode
+        import os, msvcrt
+        msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+    source = sys.stdin
+
+b = source.read()
+</code></pre>

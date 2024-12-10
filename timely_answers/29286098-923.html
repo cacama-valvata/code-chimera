@@ -1,0 +1,22 @@
+<p>Because it <em>is</em> a valid IPv4 address, as far as Microsoft's parsers are concerned.  The <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms738563.aspx" rel="nofollow noreferrer"><code>inet_addr()</code></a> documentation explains this in more detail:</p>
+<blockquote>
+<p>Internet Addresses</p>
+<p>Values specified using the &quot;.'' notation take one of the following forms:</p>
+<p>a.b.c.d <strong>a.b.c</strong> a.b a</p>
+<p>When four parts are specified, each is interpreted as a byte of data and assigned, from left to right, to the 4 bytes of an Internet address. When an Internet address is viewed as a 32-bit integer quantity on the Intel architecture, the bytes referred to above appear as &quot;d.c.b.a''. That is, the bytes on an Intel processor are ordered from right to left.</p>
+<p>The parts that make up an address in &quot;.&quot; notation can be decimal, octal or hexadecimal as specified in the C language. Numbers that start with &quot;0x&quot; or &quot;0X&quot; imply hexadecimal. Numbers that start with &quot;0&quot; imply octal. All other numbers are interpreted as decimal.</p>
+<pre>
+</blockquote>
+<p>Internet address value   Meaning
+&quot;4.3.2.16&quot;               Decimal
+&quot;004.003.002.020&quot;        Octal
+&quot;0x4.0x3.0x2.0x10&quot;       Hexadecimal
+&quot;4.003.002.0x10&quot;         Mix
+</pre></p>
+<blockquote>
+<p>The inet_addr function supports the decimal, octal, hexadecimal, and mixed notations for the string passed in the cp parameter.</p>
+<p>Note  The following notations are only used by Berkeley software, and nowhere else on the Internet. For compatibility with Berkeley software, the inet_addr function also supports the additional notations specified below.</p>
+<p><strong>When a three-part address is specified, the last part is interpreted as a 16-bit quantity and placed in the right-most 2 bytes of the network address. This makes the three-part address format convenient for specifying Class B network addresses as &quot;128.net.host&quot;</strong></p>
+<p>When a two-part address is specified, the last part is interpreted as a 24-bit quantity and placed in the right-most 3 bytes of the network address. This makes the two-part address format convenient for specifying Class A network addresses as &quot;net.host''.</p>
+<p>When only one part is given, the value is stored directly in the network address without any byte rearrangement.</p>
+</blockquote>

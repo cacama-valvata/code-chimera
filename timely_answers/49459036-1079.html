@@ -1,0 +1,16 @@
+<p>It seems you just need to add padding to your bytes before decoding. There are many other answers on this question, but I want to point out that (at least in Python 3.x) <code>base64.b64decode</code> will truncate any extra padding, provided there is enough in the first place.</p>
+<p>So, something like: <code>b'abc='</code> works just as well as <code>b'abc=='</code> (as does <code>b'abc====='</code>).</p>
+<p>What this means is that you can just add the maximum number of padding characters that you would ever need—which is two (<code>b'=='</code>)—and base64 will truncate any unnecessary ones.</p>
+<p>This lets you write:</p>
+<pre class="lang-py prettyprint-override"><code>base64.b64decode(s + b'==')
+</code></pre>
+<p>which is simpler than:</p>
+<pre class="lang-py prettyprint-override"><code>base64.b64decode(s + b'=' * (-len(s) % 4))
+</code></pre>
+<hr />
+<p>Note that if the string <code>s</code> already has some padding (e.g. <code>b&quot;aGVsbG8=&quot;</code>), this approach will only work if the <code>validate</code> keyword argument is set to <code>False</code> (which is the default). If <code>validate</code> is <code>True</code> this will result in a <code>binascii.Error</code> being raised if the total padding is longer than two characters.</p>
+<p>From the <a href="https://docs.python.org/3/library/base64.html#base64.b64decode" rel="nofollow noreferrer">docs</a>:</p>
+<blockquote>
+<p>If <em>validate</em> is <code>False</code> (the default), characters that are neither in the normal base-64 alphabet nor the alternative alphabet are discarded prior to the padding check.  If <em>validate</em> is <code>True</code>, these non-alphabet characters in the input result in a <code>binascii.Error</code>.</p>
+</blockquote>
+<p>However, if <code>validate</code> is <code>False</code> (or left blank to be the default) you can blindly add two padding characters without any problem. Thanks to eel ghEEz for pointing this out in the comments.</p>

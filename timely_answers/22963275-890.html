@@ -1,0 +1,36 @@
+<p>I am assuming that the input list has distinct elements.</p>
+<pre><code>import random
+
+def randomize_carefully(elems, n_repeat=2):
+    s = set(elems)
+    res = []
+    for n in range(n_repeat):
+        if res:
+            # Avoid the last placed element
+            lst = list(s.difference({res[-1]}))
+            # Shuffle
+            random.shuffle(lst)
+            lst.append(res[-1])
+            # Shuffle once more to avoid obvious repeating patterns in the last position
+            lst[1:] = random.sample(lst[1:], len(lst)-1)
+        else:
+            lst = elems[:]
+            random.shuffle(lst)
+        res.extend(lst)
+    return res
+
+for i in range(10):
+    print randomize_carefully([&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;])
+</code></pre>
+<p>Some output:</p>
+<pre><code>['B', 'C', 'D', 'A', 'C', 'A', 'D', 'B']
+['B', 'D', 'C', 'A', 'C', 'B', 'A', 'D']
+['C', 'B', 'D', 'A', 'B', 'C', 'D', 'A']
+['B', 'D', 'A', 'C', 'A', 'B', 'D', 'C']
+['D', 'C', 'A', 'B', 'C', 'D', 'A', 'B']
+['C', 'D', 'A', 'B', 'D', 'C', 'A', 'B']
+['D', 'A', 'C', 'B', 'C', 'A', 'B', 'D']
+['C', 'D', 'A', 'B', 'C', 'D', 'A', 'B']
+['C', 'B', 'A', 'D', 'A', 'B', 'D', 'C']
+['B', 'D', 'A', 'C', 'A', 'D', 'C', 'B']
+</code></pre>

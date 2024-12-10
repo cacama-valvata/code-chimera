@@ -1,0 +1,13 @@
+<p>Starting from SmartFomatter described above, I ended to that solution:</p>
+<pre><code>class SmartFormatter(argparse.HelpFormatter):
+    '''
+         Custom Help Formatter used to split help text when '\n' was 
+         inserted in it.
+    '''
+
+    def _split_lines(self, text, width):
+        r = []
+        for t in text.splitlines(): r.extend(argparse.HelpFormatter._split_lines(self, t, width))
+        return r
+</code></pre>
+<p>Note that strangely the formatter_class argument passed to top level parser is not inheritated by sub_parsers, one must pass it again for each created sub_parser.</p>

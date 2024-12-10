@@ -1,0 +1,29 @@
+<p>Perhaps you are looking for <a href="http://nedbatchelder.com/blog/200712/human_sorting.html" rel="nofollow noreferrer">human sorting</a> (err, <a href="http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html" rel="nofollow noreferrer">natural sorting</a>):</p>
+<pre><code>import re
+    
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split('(\d+)', text) ]
+
+alist=[
+    &quot;something1&quot;,
+    &quot;something12&quot;,
+    &quot;something17&quot;,
+    &quot;something2&quot;,
+    &quot;something25&quot;,
+    &quot;something29&quot;]
+
+alist.sort(key=natural_keys)
+print(alist)
+</code></pre>
+<p>yields</p>
+<pre><code>['something1', 'something2', 'something12', 'something17', 'something25', 'something29']
+</code></pre>
+<p>PS. I've changed my answer to use Toothy's implementation of natural sorting (posted in the comments <a href="http://nedbatchelder.com/blog/200712/human_sorting.html" rel="nofollow noreferrer">here</a>) since it is significantly faster than my original answer.</p>

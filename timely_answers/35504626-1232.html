@@ -1,0 +1,43 @@
+<p>This will not only change the <em>max_retries</em> but also enable a backoff strategy which makes requests to all <em>http://</em> addresses sleep for a period of time before retrying (to a total of 5 times):</p>
+<pre><code>import requests
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
+
+s = requests.Session()
+
+retries = Retry(total=5,
+                backoff_factor=0.1,
+                status_forcelist=[ 500, 502, 503, 504 ])
+
+s.mount('http://', HTTPAdapter(max_retries=retries))
+
+s.get('http://httpstat.us/500')
+</code></pre>
+<p>As per <a href="http://urllib3.readthedocs.io/en/latest/reference/urllib3.util.html#module-urllib3.util.retry" rel="nofollow noreferrer">documentation for <code>Retry</code></a>: if the backoff_factor is <em>0.1</em>, then sleep() will sleep for [0.1s, 0.2s, 0.4s, ...] between retries. It will also force a retry if the status code returned is <em>500</em>, <em>502</em>, <em>503</em> or <em>504</em>.</p>
+<p>Various other options to <code>Retry</code> allow for more granular control:</p>
+<ul>
+<li><em>total</em> – Total number of retries to allow.</li>
+<li><em>connect</em> – How many connection-related errors to retry on.</li>
+<li><em>read</em> – How many times to retry on read errors.</li>
+<li><em>redirect</em> – How many redirects to perform.</li>
+<li><em>method_whitelist</em> – Set of uppercased HTTP method verbs that we should retry on.</li>
+<li><em>status_forcelist</em> – A set of HTTP status codes that we should force a retry on.</li>
+<li><em>backoff_factor</em> – A backoff factor to apply between attempts.</li>
+<li><em>raise_on_redirect</em> – Whether, if the number of redirects is exhausted, to raise a <code>MaxRetryError</code>, or to return a response with a response code in the <em>3xx</em> range.</li>
+<li>raise_on_status – Similar meaning to <em>raise_on_redirect</em>: whether we should raise an exception, or return a response, if status falls in <em>status_forcelist</em> range and retries have been exhausted.</li>
+</ul>
+<p><strike><strong>NB</strong>: <em>raise_on_status</em> is relatively new, and has not made it into a release of urllib3 or requests yet.</strike> The <em>raise_on_status</em> keyword argument appears to have made it into the standard library at most in python version 3.6.</p>
+<p>To make requests retry on specific HTTP status codes, use <em>status_forcelist</em>. For example, <em>status_forcelist=[503]</em> will retry on status code <em>503</em> (service unavailable).</p>
+<p>By default, the retry only fires for these conditions:</p>
+<ul>
+<li>Could not get a connection from the pool.</li>
+<li><code>TimeoutError</code></li>
+<li><code>HTTPException</code> raised (from <em>http.client</em> in Python 3 else <em>httplib</em>).
+This seems to be low-level HTTP exceptions, like URL or protocol not
+formed correctly.</li>
+<li><code>SocketError</code></li>
+<li><code>ProtocolError</code></li>
+</ul>
+<p>Notice that these are all exceptions that prevent a regular HTTP response from being received. If <strong>any</strong> regular response is generated, no retry is done. Without using the <em>status_forcelist</em>, even a response with status 500 will not be retried.</p>
+<p>To make it behave in a manner which is more intuitive for working with a remote API or web server, I would use the above code snippet, which forces retries on statuses <em>500</em>, <em>502</em>, <em>503</em> and <em>504</em>, all of which are not uncommon on the web and (possibly) recoverable given a big enough backoff period.</p>
+<p><em>EDITED</em>: Import <code>Retry</code> class directly from <em>urllib3</em>.</p>

@@ -1,0 +1,34 @@
+<p>Yeah, you don't have any pretty options.  The time is written with this line in _write_gzip_header:</p>
+<pre><code>write32u(self.fileobj, long(time.time()))
+</code></pre>
+<p>Since they don't give you a way to override the time, you can do one of these things:</p>
+<ol>
+<li>Derive a class from GzipFile, and copy the <code>_write_gzip_header</code> function into your derived class, but with a different value in this one line.</li>
+<li>After importing the gzip module, assign new code to its time member.  You will essentially be providing a new definition of the name time in the gzip code, so you can change what time.time() means.</li>
+<li>Copy the entire gzip module, and name it my_stable_gzip, and change the line you need to.</li>
+<li>Pass a CStringIO object in as fileobj, and modify the bytestream after gzip is done.</li>
+<li>Write a fake file object that keeps track of the bytes written, and passes everything through to a real file, except for the bytes for the timestamp, which you write yourself.</li>
+</ol>
+<p>Here's an example of option #2 (untested):</p>
+<pre><code>class FakeTime:
+    def time(self):
+        return 1225856967.109
+
+import gzip
+gzip.time = FakeTime()
+
+# Now call gzip, it will think time doesn't change!
+</code></pre>
+<p>Option #5 may be the cleanest in terms of not depending on the internals of the gzip module (untested):</p>
+<pre><code>class GzipTimeFixingFile:
+    def __init__(self, realfile):
+        self.realfile = realfile
+        self.pos = 0
+
+    def write(self, bytes):
+        if self.pos == 4 and len(bytes) == 4:
+            self.realfile.write(&quot;XYZY&quot;)  # Fake time goes here.
+        else:
+            self.realfile.write(bytes)
+        self.pos += len(bytes)
+</code></pre>

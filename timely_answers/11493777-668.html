@@ -1,0 +1,85 @@
+<p>I know this is a <strong>very</strong> old question, but I have never explicitly seen a satisfactory solution to this question other than the obvious, and most likely correct, answer to re-structure your code.</p>
+<p>Unfortunately, it is not always practical to do such a thing, in which case as a very last resort, it <strong>is</strong> possible to pickle instances of classes which are defined inside another class.</p>
+<p>The python documentation for the <a href="http://docs.python.org/library/pickle.html?highlight=__reduce__#object.__reduce__" rel="nofollow noreferrer"><code>__reduce__</code> function</a> states that you can return</p>
+<blockquote>
+<p>A callable object that will be called to create the initial version of the object. The next element of the tuple will provide arguments for this callable.</p>
+</blockquote>
+<p>Therefore, all you need is an object which can return an instance of the appropriate class. This class <strong>must</strong> itself be picklable (hence, must live on the <code>__main__</code> level), and could be as simple as:</p>
+<pre><code>class _NestedClassGetter(object):
+    &quot;&quot;&quot;
+    When called with the containing class as the first argument, 
+    and the name of the nested class as the second argument,
+    returns an instance of the nested class.
+    &quot;&quot;&quot;
+    def __call__(self, containing_class, class_name):
+        nested_class = getattr(containing_class, class_name)
+        # return an instance of a nested_class. Some more intelligence could be
+        # applied for class construction if necessary.
+        return nested_class()
+</code></pre>
+<p>All that is left therefore, is to return the appropriate arguments in a <code>__reduce__</code> method on FloatType:</p>
+<pre><code>class WidgetType(object):
+
+    class FloatType(object):
+        def __reduce__(self):
+            # return a class which can return this class when called with the 
+            # appropriate tuple of arguments
+            return (_NestedClassGetter(), (WidgetType, self.__class__.__name__, ))
+</code></pre>
+<p>The result is a class which is nested but instances can be pickled (further work is needed to dump/load the <code>__state__</code> information, but this is relatively straightforward as per the <code>__reduce__</code> documentation).</p>
+<p>This same technique (with slight code modifications) can be applied for deeply nested classes.</p>
+<p>A fully worked example:</p>
+<pre><code>import pickle
+
+
+class ParentClass(object):
+
+    class NestedClass(object):
+        def __init__(self, var1):
+            self.var1 = var1
+            
+        def __reduce__(self):
+            state = self.__dict__.copy()
+            return (_NestedClassGetter(), 
+                    (ParentClass, self.__class__.__name__, ), 
+                    state,
+                    )
+
+
+class _NestedClassGetter(object):
+    &quot;&quot;&quot;
+    When called with the containing class as the first argument, 
+    and the name of the nested class as the second argument,
+    returns an instance of the nested class.
+    &quot;&quot;&quot;
+    def __call__(self, containing_class, class_name):
+        nested_class = getattr(containing_class, class_name)
+        
+        # make an instance of a simple object (this one will do), for which we can change the
+        # __class__ later on.
+        nested_instance = _NestedClassGetter()
+        
+        # set the class of the instance, the __init__ will never be called on the class
+        # but the original state will be set later on by pickle.
+        nested_instance.__class__ = nested_class
+        return nested_instance
+        
+
+
+if __name__ == '__main__':
+                
+    orig = ParentClass.NestedClass(var1=['hello', 'world'])
+    
+    pickle.dump(orig, open('simple.pickle', 'w'))
+    
+    pickled = pickle.load(open('simple.pickle', 'r'))
+    
+    print type(pickled)
+    print pickled.var1
+    
+</code></pre>
+<p>My final note on this is to remember what the other answers have said:</p>
+<blockquote>
+<p>If you are in a position to do so, consider re-factoring your code to
+avoid the nested classes in the first place.</p>
+</blockquote>

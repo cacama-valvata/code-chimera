@@ -1,0 +1,10 @@
+<p>Since Python 3.5, docstrings for <code>namedtuple</code> objects can be updated.</p>
+<p>From the <a href="https://docs.python.org/3/whatsnew/3.5.html#collections" rel="nofollow noreferrer">whatsnew</a>:</p>
+<blockquote>
+<pre><code>Point = namedtuple('Point', ['x', 'y'])
+</code></pre>
+</blockquote>
+<pre><code>Point.__doc__ += ': Cartesian coodinate'
+Point.x.__doc__ = 'abscissa'
+Point.y.__doc__ = 'ordinate'
+</code></pre>

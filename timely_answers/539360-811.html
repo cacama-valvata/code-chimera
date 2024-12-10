@@ -1,0 +1,23 @@
+<p>As you know, you can get the total_seconds from a timedelta object by accessing the <code>.seconds</code> attribute.</p>
+<p>Python provides the builtin function <code>divmod()</code> which allows for:</p>
+<pre class="lang-py prettyprint-override"><code>s = 13420
+hours, remainder = divmod(s, 3600)
+minutes, seconds = divmod(remainder, 60)
+print('{:02}:{:02}:{:02}'.format(int(hours), int(minutes), int(seconds)))
+# result: 03:43:40
+</code></pre>
+<p>or you can convert to hours and remainder by using a combination of modulo and subtraction:</p>
+<pre class="lang-py prettyprint-override"><code># arbitrary number of seconds
+s = 13420
+# hours
+hours = s // 3600 
+# remaining seconds
+s = s - (hours * 3600)
+# minutes
+minutes = s // 60
+# remaining seconds
+seconds = s - (minutes * 60)
+# total time
+print('{:02}:{:02}:{:02}'.format(int(hours), int(minutes), int(seconds)))
+# result: 03:43:40
+</code></pre>

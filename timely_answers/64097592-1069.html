@@ -1,0 +1,50 @@
+<p>There's another Q&amp;A on this topic, and there's <a href="https://stackoverflow.com/questions/44544471/how-to-get-the-coordinates-of-the-bounding-box-in-yolo-object-detection#comment102178409_44592380">this</a><sup>1</sup> interesting comment below the accepted answer. The bottom line is, that the YOLO coordinates have a different centering w.r.t. to the image. Unfortunately, the commentator didn't provide the Python port, so I did that here:</p>
+<pre class="lang-py prettyprint-override"><code>import cv2
+import matplotlib.pyplot as plt
+
+img = cv2.imread(&lt;image_path&gt;)
+dh, dw, _ = img.shape
+
+fl = open(&lt;label_path&gt;, 'r')
+data = fl.readlines()
+fl.close()
+
+for dt in data:
+
+    # Split string to float
+    _, x, y, w, h = map(float, dt.split(' '))
+
+    # Taken from https://github.com/pjreddie/darknet/blob/810d7f797bdb2f021dbe65d2524c2ff6b8ab5c8b/src/image.c#L283-L291
+    # via https://stackoverflow.com/questions/44544471/how-to-get-the-coordinates-of-the-bounding-box-in-yolo-object-detection#comment102178409_44592380
+    l = int((x - w / 2) * dw)
+    r = int((x + w / 2) * dw)
+    t = int((y - h / 2) * dh)
+    b = int((y + h / 2) * dh)
+    
+    if l &lt; 0:
+        l = 0
+    if r &gt; dw - 1:
+        r = dw - 1
+    if t &lt; 0:
+        t = 0
+    if b &gt; dh - 1:
+        b = dh - 1
+
+    cv2.rectangle(img, (l, t), (r, b), (0, 0, 255), 1)
+
+plt.imshow(img)
+plt.show()
+</code></pre>
+<p>So, for some Lenna image, that'd be the output, which I think shows the correct coordinates w.r.t. your image:</p>
+<p><a href="https://i.sstatic.net/EvrOj.png" rel="nofollow noreferrer"><img src="https://i.sstatic.net/EvrOj.png" alt="Output" /></a></p>
+<pre class="lang-none prettyprint-override"><code>----------------------------------------
+System information
+----------------------------------------
+Platform:     Windows-10-10.0.16299-SP0
+Python:       3.8.5
+Matplotlib:   3.3.2
+OpenCV:       4.4.0
+----------------------------------------
+</code></pre>
+<hr />
+<p><sup>1</sup>Please upvote the linked answers and comments.</p>

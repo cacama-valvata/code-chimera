@@ -1,0 +1,35 @@
+<p>Roughly as fast as Luka Rahne's answer, but shorter &amp; simpler, IMHO.</p>
+<pre><code>def unique_permutations(elements):
+    if len(elements) == 1:
+        yield (elements[0],)
+    else:
+        unique_elements = set(elements)
+        for first_element in unique_elements:
+            remaining_elements = list(elements)
+            remaining_elements.remove(first_element)
+            for sub_permutation in unique_permutations(remaining_elements):
+                yield (first_element,) + sub_permutation
+
+&gt;&gt;&gt; list(unique_permutations((1,2,3,1)))
+[(1, 1, 2, 3), (1, 1, 3, 2), (1, 2, 1, 3), ... , (3, 1, 2, 1), (3, 2, 1, 1)]
+</code></pre>
+<p>It works recursively by setting the first element (iterating through all unique elements), and iterating through the permutations for all remaining elements.</p>
+<p>Let's go through the <code>unique_permutations</code> of (1,2,3,1) to see how it works:</p>
+<ul>
+<li><code>unique_elements</code> are 1,2,3</li>
+<li>Let's iterate through them: <code>first_element</code> starts with 1.
+<ul>
+<li><code>remaining_elements</code> are [2,3,1] (ie. 1,2,3,1 minus the first 1)</li>
+<li>We iterate (recursively) through the permutations of the remaining elements: (1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1)</li>
+<li>For each <code>sub_permutation</code>, we insert the <code>first_element</code>: (<strong>1</strong>,1,2,3), (<strong>1</strong>,1,3,2), ... and yield the result.</li>
+</ul>
+</li>
+<li>Now we iterate to <code>first_element</code> = 2, and do the same as above.
+<ul>
+<li><code>remaining_elements</code> are [1,3,1] (ie. 1,2,3,1 minus the first 2)</li>
+<li>We iterate through the permutations of the remaining elements: (1, 1, 3), (1, 3, 1), (3, 1, 1)</li>
+<li>For each <code>sub_permutation</code>, we insert the <code>first_element</code>: (<strong>2</strong>, 1, 1, 3), (<strong>2</strong>, 1, 3, 1), (<strong>2</strong>, 3, 1, 1)... and yield the result.</li>
+</ul>
+</li>
+<li>Finally, we do the same with <code>first_element</code> = 3.</li>
+</ul>

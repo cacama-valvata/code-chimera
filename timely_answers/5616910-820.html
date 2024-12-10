@@ -1,0 +1,16 @@
+<p>Use a capturing group inside a lookahead. The lookahead captures the text you're interested in, but the actual match is technically the zero-width substring before the lookahead, so the matches are technically non-overlapping:</p>
+<pre><code>import re 
+s = &quot;123456789123456789&quot;
+matches = re.finditer(r'(?=(\d{10}))', s)
+results = [int(match.group(1)) for match in matches]
+# results: 
+# [1234567891,
+#  2345678912,
+#  3456789123,
+#  4567891234,
+#  5678912345,
+#  6789123456,
+#  7891234567,
+#  8912345678,
+#  9123456789]
+</code></pre>

@@ -1,0 +1,14 @@
+<p>Yes it's in the POSIX shell grammar. You can also have <strong>more than one here-doc for the same command</strong> (some other examples use two <code>cat</code> invocations, but this works as well):</p>
+<pre><code>cat &lt;&lt;EOF1 &lt;&lt;EOF2
+first here-doc
+EOF1
+second here-doc
+EOF2
+</code></pre>
+<p>This is contrived (using 2 here-docs for stdin), but if you think of providing input for different file descriptors it immediately makes sense.</p>
+<p>There's also the possibility to <strong>drop the <code>cat</code> entirely</strong>. Why not make the here-document directly available to <code>cmd</code>:</p>
+<pre><code>cmd &lt;&lt; EOF
+input
+here
+EOF
+</code></pre>

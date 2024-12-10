@@ -1,0 +1,14 @@
+<p>For 3.1+, one of the following:</p>
+<pre><code>isinstance(something, io.TextIOBase)
+isinstance(something, io.BufferedIOBase)
+isinstance(something, io.RawIOBase)
+isinstance(something, io.IOBase)
+</code></pre>
+<p>For 2.x, &quot;file-like object&quot; is too vague a thing to check for, but the documentation for whatever function(s) you're dealing with will hopefully tell you what they actually need; if not, read the code.</p>
+<hr />
+<p>As other answers point out, the first thing to ask is what exactly you're checking for. Usually, EAFP is sufficient, and more idiomatic.</p>
+<p><a href="https://docs.python.org/3/glossary.html#term-file-object" rel="nofollow noreferrer">The glossary</a> says &quot;file-like object&quot; is a synonym for &quot;file object&quot;, which ultimately means it's an instance of one of the three <a href="https://docs.python.org/3/library/abc.html" rel="nofollow noreferrer">abstract base classes</a> defined in <a href="https://docs.python.org/3/library/io.html#class-hierarchy" rel="nofollow noreferrer">the <code>io</code> module</a>, which are themselves all subclasses of <code>IOBase</code>. So, the way to check is exactly as shown above.</p>
+<p>(However, checking <code>IOBase</code> isn't very useful. Can you imagine a case where you need to distinguish an actual file-like <code>read(size)</code> from some one-argument function named <code>read</code> that isn't file-like, without also needing to distinguish between text files and raw binary files? So, really, you almost always want to check, e.g., &quot;is a text file object&quot;, not &quot;is a file-like object&quot;.)</p>
+<hr />
+<p>For 2.x, while the <code>io</code> module has existed since 2.6+, built-in file objects are not instances of <code>io</code> classes, neither are any of the file-like objects in the stdlib, and neither are most third-party file-like objects you're likely to encounter. There was no official definition of what &quot;file-like object&quot; means; it's just &quot;something like a builtin <a href="https://docs.python.org/2.7/library/stdtypes.html#bltin-file-objects" rel="nofollow noreferrer">file object</a>&quot;, and different functions mean different things by &quot;like&quot;. Such functions should document what they mean; if they don't, you have to look at the code.</p>
+<p>However, the most common meanings are &quot;has <code>read(size)</code>&quot;, &quot;has <code>read()</code>&quot;, or &quot;is an iterable of strings&quot;, but some old libraries may expect <code>readline</code> instead of one of those, some libraries like to <code>close()</code> files you give them, some will expect that if <code>fileno</code> is present then other functionality is available, etc. And similarly for <code>write(buf)</code> (although there are a lot fewer options in that direction).</p>

@@ -1,0 +1,16 @@
+<p>You can recurse over the tree, replacing each <code>defaultdict</code> instance with a dict produced by a dict comprehension:</p>
+<pre><code>def default_to_regular(d):
+    if isinstance(d, defaultdict):
+        d = {k: default_to_regular(v) for k, v in d.items()}
+    return d
+</code></pre>
+<p>Demo:</p>
+<pre><code>&gt;&gt;&gt; from collections import defaultdict
+&gt;&gt;&gt; factory = lambda: defaultdict(factory)
+&gt;&gt;&gt; defdict = factory()
+&gt;&gt;&gt; defdict['one']['two']['three']['four'] = 5
+&gt;&gt;&gt; defdict
+defaultdict(&lt;function &lt;lambda&gt; at 0x103098ed8&gt;, {'one': defaultdict(&lt;function &lt;lambda&gt; at 0x103098ed8&gt;, {'two': defaultdict(&lt;function &lt;lambda&gt; at 0x103098ed8&gt;, {'three': defaultdict(&lt;function &lt;lambda&gt; at 0x103098ed8&gt;, {'four': 5})})})})
+&gt;&gt;&gt; default_to_regular(defdict)
+{'one': {'two': {'three': {'four': 5}}}}
+</code></pre>

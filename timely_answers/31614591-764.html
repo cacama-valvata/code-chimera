@@ -1,0 +1,39 @@
+<p>There are a lot of really weirdly complicated answers to this question. Am I oversimplifying this, because this seems sufficient for most things to me.</p>
+<pre><code>from threading import Thread
+
+class PropagatingThread(Thread):
+    def run(self):
+        self.exc = None
+        try:
+            if hasattr(self, '_Thread__target'):
+                # Thread uses name mangling prior to Python 3.
+                self.ret = self._Thread__target(*self._Thread__args, **self._Thread__kwargs)
+            else:
+                self.ret = self._target(*self._args, **self._kwargs)
+        except BaseException as e:
+            self.exc = e
+
+    def join(self, timeout=None):
+        super(PropagatingThread, self).join(timeout)
+        if self.exc:
+            raise self.exc
+        return self.ret
+</code></pre>
+<p>If you're certain you'll only ever be running on one or the other version of Python, you could reduce the <code>run()</code> method down to just the mangled version (if you'll only be running on versions of Python before 3), or just the clean version (if you'll only be running on versions of Python starting with 3).</p>
+<p>Example usage:</p>
+<pre><code>def f(*args, **kwargs):
+    print(args)
+    print(kwargs)
+    raise Exception('I suck at this')
+
+t = PropagatingThread(target=f, args=(5,), kwargs={'hello':'world'})
+t.start()
+t.join()
+</code></pre>
+<p>And you'll see the exception raised on the other thread when you join.</p>
+<p>If you are using <code>six</code> or on Python 3 only, you can improve the stack trace information you get when the exception is re-raised. Instead of only the stack at the point of the join, you can wrap the inner exception in a new outer exception, and get both stack traces with</p>
+<pre><code>six.raise_from(RuntimeError('Exception in thread'),self.exc)
+</code></pre>
+<p>or</p>
+<pre><code>raise RuntimeError('Exception in thread') from self.exc
+</code></pre>

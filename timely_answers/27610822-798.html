@@ -1,0 +1,140 @@
+<p><strong>UPDATE</strong>:</p>
+<p>The original solution below was written for PySide (Qt4). It still works with both PySide2 (Qt5) and PySide6 (Qt6), but with a couple of provisos:</p>
+<ul>
+<li>The <a href="https://doc.qt.io/qt-5/qmetaobject.html#connectSlotsByName" rel="nofollow noreferrer">connectSlotsByName</a> feature requires that the corresponding slots are decorated with an appropriate <a href="https://wiki.qt.io/Qt_for_Python_Signals_and_Slots#Using_QtCore.Slot.28.29" rel="nofollow noreferrer">QtCore.Slot</a>.</li>
+<li>Custom/Promoted widgets aren't handled automatically. The required classes must be explicily imported and registered with <a href="https://doc.qt.io/qtforpython-5/PySide2/QtUiTools/QUiLoader.html#PySide2.QtUiTools.PySide2.QtUiTools.QUiLoader.registerCustomWidget" rel="nofollow noreferrer">registerCustomWidget</a> before <code>loadUi</code> is called.</li>
+</ul>
+<p>(In addition, it should be mentioned that PySide2 and PySide6 now have a <a href="https://doc.qt.io/qtforpython-5/PySide2/QtUiTools/ls.loadUiType.html" rel="nofollow noreferrer">loadUiType</a> function, which at first glance seems to provide a much simpler solution. However, the current implementation has the major drawback of requiring the <a href="https://doc.qt.io/qt-5/uic.html" rel="nofollow noreferrer">Qt uic tool</a> to be installed on the system and executable from the user's PATH. This certainly isn't always guaranteed to be the case, so it's debateable whether it's suitable for use in a production environment).</p>
+<p>Below is an updated demo that illustrates the two features noted above:</p>
+<p><img src="https://i.sstatic.net/H9YvG.png" alt="screenshot" /></p>
+<p><em>test.py</em>:</p>
+<pre><code>from PySide2 import QtWidgets, QtCore, QtUiTools
+# from PySide6 import QtWidgets, QtCore, QtUiTools
+
+class UiLoader(QtUiTools.QUiLoader):
+    _baseinstance = None
+
+    def createWidget(self, classname, parent=None, name=''):
+        if parent is None and self._baseinstance is not None:
+            widget = self._baseinstance
+        else:
+            widget = super().createWidget(classname, parent, name)
+            if self._baseinstance is not None:
+                setattr(self._baseinstance, name, widget)
+        return widget
+
+    def loadUi(self, uifile, baseinstance=None):
+        self._baseinstance = baseinstance
+        widget = self.load(uifile)
+        QtCore.QMetaObject.connectSlotsByName(baseinstance)
+        return widget
+
+
+class MyLabel(QtWidgets.QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setStyleSheet('background: plum')
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        loader = UiLoader()
+        loader.registerCustomWidget(MyLabel)
+        loader.loadUi('main.ui', self)
+
+    @QtCore.Slot()
+    def on_testButton_clicked(self):
+        self.customLabel.setText(
+            '' if self.customLabel.text() else 'Hello World')
+
+if __name__ == '__main__':
+
+    app = QtWidgets.QApplication(['Test'])
+    window = MainWindow()
+    window.show()
+    try:
+        app.exec()
+    except AttributeError:
+        app.exec_()
+</code></pre>
+<p><em>main.ui</em>:</p>
+<pre class="lang-xml prettyprint-override"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;ui version=&quot;4.0&quot;&gt;
+ &lt;class&gt;MainWindow&lt;/class&gt;
+ &lt;widget class=&quot;QMainWindow&quot; name=&quot;MainWindow&quot;&gt;
+  &lt;property name=&quot;geometry&quot;&gt;
+   &lt;rect&gt;
+    &lt;x&gt;0&lt;/x&gt;
+    &lt;y&gt;0&lt;/y&gt;
+    &lt;width&gt;213&lt;/width&gt;
+    &lt;height&gt;153&lt;/height&gt;
+   &lt;/rect&gt;
+  &lt;/property&gt;
+  &lt;property name=&quot;windowTitle&quot;&gt;
+   &lt;string&gt;LoadUi Test&lt;/string&gt;
+  &lt;/property&gt;
+  &lt;widget class=&quot;QWidget&quot; name=&quot;centralwidget&quot;&gt;
+   &lt;layout class=&quot;QVBoxLayout&quot; name=&quot;verticalLayout&quot;&gt;
+    &lt;item&gt;
+     &lt;widget class=&quot;MyLabel&quot; name=&quot;customLabel&quot;&gt;
+      &lt;property name=&quot;text&quot;&gt;
+       &lt;string/&gt;
+      &lt;/property&gt;
+      &lt;property name=&quot;alignment&quot;&gt;
+       &lt;set&gt;Qt::AlignCenter&lt;/set&gt;
+      &lt;/property&gt;
+     &lt;/widget&gt;
+    &lt;/item&gt;
+    &lt;item&gt;
+     &lt;widget class=&quot;QPushButton&quot; name=&quot;testButton&quot;&gt;
+      &lt;property name=&quot;text&quot;&gt;
+       &lt;string&gt;Click Me&lt;/string&gt;
+      &lt;/property&gt;
+     &lt;/widget&gt;
+    &lt;/item&gt;
+   &lt;/layout&gt;
+  &lt;/widget&gt;
+ &lt;/widget&gt;
+ &lt;customwidgets&gt;
+  &lt;customwidget&gt;
+   &lt;class&gt;MyLabel&lt;/class&gt;
+   &lt;extends&gt;QLabel&lt;/extends&gt;
+   &lt;header&gt;test&lt;/header&gt;
+  &lt;/customwidget&gt;
+ &lt;/customwidgets&gt;
+ &lt;resources/&gt;
+ &lt;connections/&gt;
+&lt;/ui&gt;
+</code></pre>
+<hr />
+<p><strong>Original Solution</strong>:</p>
+<p>At the moment, the PySide <a href="https://pyside.github.io/docs/pyside/PySide/QtUiTools/QUiLoader.html" rel="nofollow noreferrer">QUiLoader class</a> doesn't have a convenient way to load widgets into to an instance of the top-level class like the <a href="http://pyqt.sourceforge.net/Docs/PyQt4/designer.html#PyQt4.uic.loadUi" rel="nofollow noreferrer">PyQt uic module</a> has.</p>
+<p>However, it's fairly easy to add something equivalent:</p>
+<pre><code>from PySide import QtGui, QtCore, QtUiTools
+
+class UiLoader(QtUiTools.QUiLoader):
+    _baseinstance = None
+
+    def createWidget(self, classname, parent=None, name=''):
+        if parent is None and self._baseinstance is not None:
+            widget = self._baseinstance
+        else:
+            widget = super(UiLoader, self).createWidget(classname, parent, name)
+            if self._baseinstance is not None:
+                setattr(self._baseinstance, name, widget)
+        return widget
+
+    def loadUi(self, uifile, baseinstance=None):
+        self._baseinstance = baseinstance
+        widget = self.load(uifile)
+        QtCore.QMetaObject.connectSlotsByName(widget)
+        return widget
+</code></pre>
+<p>Which could then used like this:</p>
+<pre><code>class MainWindow(QtGui.QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(self, parent)
+        UiLoader().loadUi('main.ui', self)
+        self.listWidget.addItems(['Item {0}'.format(x) for x in range(100)])
+</code></pre>
+<p>For this to work properly, the <code>baseinstance</code> argument of <code>loadUi</code> has to be an instance of the top-level class from Qt Designer file. All the other widgets will then be added to it as instance attributes.</p>

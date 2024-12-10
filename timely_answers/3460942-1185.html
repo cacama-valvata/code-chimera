@@ -1,0 +1,10 @@
+<p>You could create a custom field that auto-truncates the field (I think this code should work, but double-check it):</p>
+<pre><code>class TruncatingCharField(models.CharField):
+    def get_prep_value(self, value):
+        value = super(TruncatingCharField,self).get_prep_value(value)
+        if value:
+            return value[:self.max_length]
+        return value
+</code></pre>
+<p>Then, instead of using <code>models.CharField</code> in your <code>models.py</code> file, you'd just use TruncatingCharField instead.</p>
+<p><a href="http://docs.djangoproject.com/en/dev/howto/custom-model-fields/#django.db.models.get_prep_value" rel="nofollow noreferrer"><code>get_prep_value</code></a> prepares the value for a field for insertion in the database, so it's the ideal place to truncate.</p>

@@ -1,0 +1,51 @@
+<p>You could use the <code>struct</code> module to pack the floating-point value into a buffer.  The <code>&quot;d&quot;</code> <a href="https://docs.python.org/3/library/struct.html#format-characters" rel="nofollow noreferrer">format string</a> gives an 8-byte <code>double</code>.</p>
+<pre><code>import struct
+
+x = float(0.1)
+buf = struct.pack(&quot;d&quot;, x)
+print(buf)  # b'\x9a\x99\x99\x99\x99\x99\xb9?'
+
+# Hex dump, for readability
+print(&quot; &quot;.join(&quot;{:02X}&quot;.format(b) for b in buf))  # 9A 99 99 99 99 99 B9 3F
+</code></pre>
+<p>The buffer will reflect the native endianness of your system.  You can also experiment with <a href="https://docs.python.org/3/library/struct.html#byte-order-size-and-alignment" rel="nofollow noreferrer">byte-order specifiers</a> in the format string.</p>
+<p>You can also re-interpret the same bytes as an integer.  To do this, you can use the unsigned integer type of the same size (8 bytes).  In this case, it would be the <code>long long</code> unsigned integer (format string <code>&quot;Q&quot;</code>):</p>
+<pre><code># Interpret bytes as unsigned integer.
+i, = struct.unpack(&quot;Q&quot;, buf)
+print(&quot;{:0&gt;16X}&quot;.format(i))  # 3FB999999999999A
+</code></pre>
+<p>Finally, if you want, you can interpret the buffer as a <code>double</code>, and confirm that the value survives a round-trip serialization:</p>
+<pre><code>x2, = struct.unpack(&quot;d&quot;, buf)
+print(x2)       # 0.1
+print(x2 == x)  # True
+</code></pre>
+<h2>Viewing floating-point representation components</h2>
+<p>To view the individual components of the floating point number, you can examine parts of the integer equivalent using bitmasks.</p>
+<pre><code>import struct
+
+x = -(16 + 4 + 2 + 1 + 0.5)
+buf = struct.pack(&quot;d&quot;, x)
+i, = struct.unpack(&quot;Q&quot;, buf)
+</code></pre>
+<p>Here, <code>x</code> has a value of <code>-0b10111.1</code>, or equivalently <code>-0b1.01111 * 2^4</code>.</p>
+<p>There are two important notes about the <a href="https://en.wikipedia.org/wiki/IEEE_754" rel="nofollow noreferrer">IEEE 753 representation</a>:</p>
+<ul>
+<li>the exponent has a <em>bias</em> of 1023, so we expect a value of 1027 stored in the exponent.</li>
+<li>the mantissa’s leading <code>1</code> is implicit, so we expect the mantissa bits to be <code>01111</code>.</li>
+</ul>
+<p>We can use the appropriate masks for the bit patterns shown in the question, then print in binary</p>
+<pre><code>print(format(i, '0&gt;64b'))
+
+SIGN_MASK = 0x8000000000000000
+EXPN_MASK = 0x7FF0000000000000
+MANT_MASK = 0x000FFFFFFFFFFFFF
+print(format(i &amp; SIGN_MASK, '0&gt;1b')[:1])
+print(format(i &amp; EXPN_MASK, '0&gt;11b')[:11])
+print(format(i &amp; MANT_MASK, '0&gt;52b'))
+</code></pre>
+<p>Results:</p>
+<pre><code>1100000000110111100000000000000000000000000000000000000000000000
+1
+10000000011
+0111100000000000000000000000000000000000000000000000
+</code></pre>

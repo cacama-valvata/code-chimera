@@ -1,0 +1,9 @@
+<p>Yes:</p>
+<pre><code>git rev-parse --show-toplevel
+</code></pre>
+<p>If you want to replicate the Mercurial command more directly, you can create an <a href="https://git-scm.com/book/en/v2/Git-Basics-Git-Aliases" rel="nofollow noreferrer">alias</a>:</p>
+<pre><code>git config --global alias.root 'rev-parse --show-toplevel'
+</code></pre>
+<p>and now <code>git root</code> will function just as <code>hg root</code>.</p>
+<hr />
+<p><strong>Note</strong>: In a submodule this will display the root directory of the <em>submodule</em> and <strong>not</strong> the parent repository. If you are using Git &gt;=2.13 or above, there is a way that <a href="https://stackoverflow.com/a/958125/884640">submodules can show the superproject's root directory.</a> If your git is older than that, <a href="https://git-scm.com/docs/git-rev-parse#Documentation/git-rev-parse.txt---show-superproject-working-tree" rel="nofollow noreferrer">see this other answer.</a></p>

@@ -1,0 +1,48 @@
+<p>A little known fact is that you don't need to construct <code>set</code>s to do this:</p>
+<p>In Python 2:</p>
+<pre><code>In [78]: d1 = {'a': 1, 'b': 2}
+
+In [79]: d2 = {'b': 2, 'c': 3}
+
+In [80]: d1.viewkeys() &amp; d2.viewkeys()
+Out[80]: {'b'}
+</code></pre>
+<p>In Python 3 replace <code>viewkeys</code> with <code>keys</code>; the same applies to <code>viewvalues</code> and <code>viewitems</code>.</p>
+<p>From the documentation of <code>viewitems</code>:</p>
+<pre><code>In [113]: d1.viewitems??
+Type:       builtin_function_or_method
+String Form:&lt;built-in method viewitems of dict object at 0x64a61b0&gt;
+Docstring:  D.viewitems() -&gt; a set-like object providing a view on D's items
+</code></pre>
+<p>For larger <code>dict</code>s this also slightly faster than constructing <code>set</code>s and then intersecting them:</p>
+<pre><code>In [122]: d1 = {i: rand() for i in range(10000)}
+
+In [123]: d2 = {i: rand() for i in range(10000)}
+
+In [124]: timeit d1.viewkeys() &amp; d2.viewkeys()
+1000 loops, best of 3: 714 µs per loop
+
+In [125]: %%timeit
+s1 = set(d1)
+s2 = set(d2)
+res = s1 &amp; s2
+
+1000 loops, best of 3: 805 µs per loop
+
+For smaller `dict`s `set` construction is faster:
+
+In [126]: d1 = {'a': 1, 'b': 2}
+
+In [127]: d2 = {'b': 2, 'c': 3}
+
+In [128]: timeit d1.viewkeys() &amp; d2.viewkeys()
+1000000 loops, best of 3: 591 ns per loop
+
+In [129]: %%timeit
+s1 = set(d1)
+s2 = set(d2)
+res = s1 &amp; s2
+
+1000000 loops, best of 3: 477 ns per loop
+</code></pre>
+<p>We're comparing nanoseconds here, which may or may not matter to you. In any case, you get back a <code>set</code>, so using <code>viewkeys</code>/<code>keys</code> eliminates a bit of clutter.</p>

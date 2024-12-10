@@ -1,0 +1,21 @@
+<ol>
+<li>The accepted solution won't work directly for python3 - it will need an <code>from functools import reduce</code>.</li>
+<li>Also it seems more pythonic to use a <code>for</code> loop.
+See the quote from <a href="https://docs.python.org/3.0/whatsnew/3.0.html#builtins" rel="nofollow noreferrer">What’s New In Python 3.0</a>.</li>
+</ol>
+<blockquote>
+<p>Removed <code>reduce()</code>. Use <code>functools.reduce()</code> if you really need it; however, 99 percent of the time an explicit <code>for</code> loop is more readable.
+3. Next, the accepted solution doesn't set non-existing nested keys (it returns a <code>KeyError</code>) - see @eafit's answer for a solution</p>
+</blockquote>
+<p>So why not use the suggested method from kolergy's question for getting a value:</p>
+<pre><code>def getFromDict(dataDict, mapList):    
+    for k in mapList: dataDict = dataDict[k]
+    return dataDict
+</code></pre>
+<p>And the code from @eafit's answer for setting a value:</p>
+<pre><code>def nested_set(dic, keys, value):
+    for key in keys[:-1]:
+        dic = dic.setdefault(key, {})
+    dic[keys[-1]] = value
+</code></pre>
+<p>Both work straight in python 2 and 3</p>

@@ -1,0 +1,66 @@
+<p>It's 2018, we deserve a bit better solution:</p>
+<pre><code>from better_abc import ABCMeta, abstract_attribute    # see below
+
+class AbstractFoo(metaclass=ABCMeta):
+
+    @abstract_attribute
+    def bar(self):
+        pass
+
+class Foo(AbstractFoo):
+    def __init__(self):
+        self.bar = 3
+
+class BadFoo(AbstractFoo):
+    def __init__(self):
+        pass
+</code></pre>
+<p>It will behave like this:</p>
+<pre><code>Foo()     # ok
+BadFoo()  # will raise: NotImplementedError: Can't instantiate abstract class BadFoo
+# with abstract attributes: bar
+</code></pre>
+<p>This answer uses same approach as the accepted answer, but integrates well with built-in ABC and does not require boilerplate of <code>check_bar()</code> helpers.</p>
+<p>Here is the <code>better_abc.py</code> content:</p>
+<pre><code>from abc import ABCMeta as NativeABCMeta
+
+class DummyAttribute:
+    pass
+
+def abstract_attribute(obj=None):
+    if obj is None:
+        obj = DummyAttribute()
+    obj.__is_abstract_attribute__ = True
+    return obj
+
+
+class ABCMeta(NativeABCMeta):
+
+    def __call__(cls, *args, **kwargs):
+        instance = NativeABCMeta.__call__(cls, *args, **kwargs)
+        abstract_attributes = {
+            name
+            for name in dir(instance)
+            if getattr(getattr(instance, name), '__is_abstract_attribute__', False)
+        }
+        if abstract_attributes:
+            raise NotImplementedError(
+                &quot;Can't instantiate abstract class {} with&quot;
+                &quot; abstract attributes: {}&quot;.format(
+                    cls.__name__,
+                    ', '.join(abstract_attributes)
+                )
+            )
+        return instance
+</code></pre>
+<p>The nice thing is that you can do:</p>
+<pre><code>class AbstractFoo(metaclass=ABCMeta):
+    bar = abstract_attribute()
+</code></pre>
+<p>and it will work same as above.</p>
+<p>Also one can use:</p>
+<pre><code>class ABC(ABCMeta):
+    pass
+</code></pre>
+<p>to define custom ABC helper. PS. I consider this code to be CC0.</p>
+<p>This could be improved by using AST parser to raise earlier (on class declaration) by scanning the <code>__init__</code> code, but it seems to be an overkill for now (unless someone is willing to implement).</p>

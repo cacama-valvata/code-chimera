@@ -1,0 +1,31 @@
+<h1>For non-edge-cases:</h1>
+<p>If <code>argv</code> is anything <em>approximating</em> reasonable command-line arguments, the following should be serviceable (and the most idiomatic way to access them, to boot):</p>
+<pre><code>list(map(os.fsencode, sys.argv))
+</code></pre>
+<p>(h/t vstinner from the below discussion)</p>
+<h1>For edge-cases: impossible+<code>wontfix</code></h1>
+<p>See the discussion at <a href="https://bugs.python.org/issue8776" rel="nofollow noreferrer">https://bugs.python.org/issue8776</a></p>
+<p>or, for the lazy-but-curious, the relevant excerpts (emphasis+formatting added):</p>
+<blockquote>
+<p>[msg106172]</p>
+</blockquote>
+<blockquote>
+<p>…<code>Py_Main</code> expects <code>wchar_t*</code>, so <strong>no byte-oriented representation of the
+command line is readily available.</strong></p>
+</blockquote>
+<blockquote>
+<p>[-Martin v. Löwis]</p>
+</blockquote>
+
+<blockquote>
+<p>[msg217416]</p>
+</blockquote>
+<blockquote>
+<p>Today I regret <code>os.environb</code> (I added it). If I remember correctly, <code>os.environb</code> was added before the PEP 383 (<code>surrogateescape</code>). This PEP makes <code>os.environb</code> almost useless. In Python 3, Unicode is the natural choice, and thanks to the PEP 383, it's still possible to use any &quot;raw bytes&quot;.</p>
+<p><code>argvb</code> can be computed in one line: <code>list(map(os.fsencode, sys.argv))</code>.</p>
+<p><strong>I now suggest to close [Bytes version of sys.argv] as wontfix.</strong></p>
+</blockquote>
+<blockquote>
+<p>[-STINNER Victor]</p>
+</blockquote>
+<p>while his &quot;one line&quot; fails on edge cases (such as where an element of the true <code>argv</code> contains a bytestring such as <code>0x313233c3bf414243c3a2c298c2ba00</code>), it works in the proverbial 99.9% of use-cases.</p>

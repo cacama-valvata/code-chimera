@@ -1,0 +1,173 @@
+<p>Some options you have for animating plots in Jupyter/IPython, using matplotlib:</p>
+<ul>
+<li><p><strong>Using <code>display</code> in a loop</strong> Use <code>IPython.display.display(fig)</code> to display a figure in the output. Using a loop you would want to clear the output before a new figure is shown. Note that this technique gives in general not so smooth resluts. I would hence advice to use any of the below.<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>import matplotlib.pyplot as plt
+import matplotlib.animation
+import numpy as np
+from IPython.display import display, clear_output
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+for i in range(len(x)):
+    animate(i)
+    clear_output(wait=True)
+    display(fig)
+    
+plt.show()</code></pre>
+</div>
+</div>
+</p>
+</li>
+<li><p><strong><code>%matplotlib notebook</code></strong> Use IPython magic <code>%matplotlib notebook</code> to set the backend to the notebook backend. This will keep the figure alive instead of displaying a static png file and can hence also show animations.<br />
+Complete example:<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>%matplotlib notebook
+import matplotlib.pyplot as plt
+import matplotlib.animation
+import numpy as np
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(t))
+
+plt.show()</code></pre>
+</div>
+</div>
+</p>
+</li>
+<li><p><strong><code>%matplotlib tk</code></strong> Use IPython magic <code>%matplotlib tk</code> to set the backend to the tk backend. This will open the figure in a new plotting window, which is interactive and can thus also show animations.<br />
+Complete example:<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>%matplotlib tk
+import matplotlib.pyplot as plt
+import matplotlib.animation
+import numpy as np
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(t))
+
+plt.show()</code></pre>
+</div>
+</div>
+</p>
+</li>
+<li><p><strong>Convert animation to mp4 video</strong> (option mentionned by @Perfi already):</p>
+<pre><code>  from IPython.display import HTML
+  HTML(ani.to_html5_video())
+</code></pre>
+</li>
+</ul>
+<p>or use <code>plt.rcParams[&quot;animation.html&quot;] = &quot;html5&quot;</code> at the beginning of the notebook.
+This will require to have ffmpeg video codecs available to convert to HTML5 video. The video is then shown inline. This is therefore compatible with <code>%matplotlib inline</code> backend. Complete example:<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>%matplotlib inline
+import matplotlib.pyplot as plt
+plt.rcParams["animation.html"] = "html5"
+import matplotlib.animation
+import numpy as np
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(t))
+ani</code></pre>
+</div>
+</div>
+<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>%matplotlib inline
+import matplotlib.pyplot as plt
+import matplotlib.animation
+import numpy as np
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(t))
+
+from IPython.display import HTML
+HTML(ani.to_html5_video())</code></pre>
+</div>
+</div>
+</p>
+<ul>
+<li><p><strong>Convert animation to JavaScript</strong>:</p>
+<pre><code>  from IPython.display import HTML
+  HTML(ani.to_jshtml())
+</code></pre>
+</li>
+</ul>
+<p>or use <code>plt.rcParams[&quot;animation.html&quot;] = &quot;jshtml&quot;</code> at the beginning of the notebook.
+This will display the animation as HTML with JavaScript. This highly compatible with most new browsers and also with the <code>%matplotlib inline</code> backend. It is available in matplotlib 2.1 or higher.<br />
+Complete example:<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>%matplotlib inline
+import matplotlib.pyplot as plt
+plt.rcParams["animation.html"] = "jshtml"
+import matplotlib.animation
+import numpy as np
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(t))
+ani</code></pre>
+</div>
+</div>
+<div class="snippet" data-lang="js" data-hide="true" data-console="true" data-babel="false" data-babel-preset-react="false" data-babel-preset-ts="false">
+<div class="snippet-code snippet-currently-hidden">
+<pre class="snippet-code-css lang-css prettyprint-override"><code>%matplotlib inline
+import matplotlib.pyplot as plt
+import matplotlib.animation
+import numpy as np
+
+t = np.linspace(0,2*np.pi)
+x = np.sin(t)
+
+fig, ax = plt.subplots()
+l, = ax.plot([0,2*np.pi],[-1,1])
+
+animate = lambda i: l.set_data(t[:i], x[:i])
+
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=len(t))
+
+from IPython.display import HTML
+HTML(ani.to_jshtml())</code></pre>
+</div>
+</div>
+</p>

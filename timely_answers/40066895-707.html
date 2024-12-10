@@ -1,0 +1,6 @@
+<p>There is an issue between Keras and TF, Probably tf.python.control_flow_ops does not exist or not visible anymore.
+using below import statements you can resolve this issue</p>
+<p>import tensorflow as tf</p>
+<p>tf.python.control_flow_ops = tf</p>
+<p>For Details check:
+<a href="https://github.com/fchollet/keras/issues/3857" rel="nofollow noreferrer">https://github.com/fchollet/keras/issues/3857</a></p>

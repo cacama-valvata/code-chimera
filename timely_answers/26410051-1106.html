@@ -1,0 +1,30 @@
+<p>It will require some clever <code>numpy</code> <code>array</code> broadcasting, to check, for each value in <code>index</code>, if the value is between each of the intervals in the <code>interval</code> list (open on both end, such that &gt;=low_end and &lt;=high_end):</p>
+<pre><code>In [158]:
+import numpy as np
+def f(a1, a2):
+    return (((a1 - a2[:,:,np.newaxis])).prod(1)&lt;=0).any(0)
+In [159]:
+
+f(s.index.values, np.array(intervals))
+Out[159]:
+array([ True,  True, False,  True,  True], dtype=bool)
+In [160]:
+
+%timeit s.ix[f(s.index.values, np.array(intervals))]
+1000 loops, best of 3: 212 µs per loop
+In [161]:
+
+%timeit s[f(s.index.values, np.array(intervals))]
+10000 loops, best of 3: 177 µs per loop
+In [162]:
+
+%timeit pd.concat([s.ix[start: end] for start, end in intervals])
+1000 loops, best of 3: 1.64 ms per loop
+</code></pre>
+<p>result:</p>
+<pre><code>1    1
+2    2
+4    4
+5    5
+dtype: int64
+</code></pre>

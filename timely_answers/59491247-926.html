@@ -1,0 +1,48 @@
+<p>The else clause is only executed when the <em>while-condition</em> becomes false.</p>
+<p>Here are some examples:</p>
+<p><strong>Example 1:</strong> Initially the condition is false, so <em>else-clause</em> is executed.</p>
+<pre><code>i = 99999999
+
+while i &lt; 5:
+    print(i)
+    i += 1
+else:
+    print('this')
+</code></pre>
+<p>OUTPUT:</p>
+<pre><code>this
+</code></pre>
+<p><strong>Example 2:</strong> The <em>while-condition</em> <code>i &lt; 5</code> never became false because <code>i == 3</code> breaks the loop, so <em>else-clause</em> was not executed.</p>
+<pre><code>i = 0
+
+while i &lt; 5:
+    print(i)
+    if i == 3:
+        break
+    i += 1
+else:
+    print('this')
+</code></pre>
+<p>OUTPUT:</p>
+<pre><code>0
+1
+2
+3
+</code></pre>
+<p><strong>Example 3:</strong> The <em>while-condition</em> <code>i &lt; 5</code> became  false when <code>i</code> was <code>5</code>, so <em>else-clause</em> was executed.</p>
+<pre><code>i = 0
+
+while i &lt; 5:
+    print(i)
+    i += 1
+else:
+    print('this')
+</code></pre>
+<p>OUTPUT:</p>
+<pre><code>0
+1
+2
+3
+4
+this
+</code></pre>

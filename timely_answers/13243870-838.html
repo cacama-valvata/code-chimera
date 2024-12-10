@@ -1,0 +1,45 @@
+<p>You can use <code>return</code> once in a generator; it stops iteration without yielding anything, and thus provides an explicit alternative to letting the function run out of scope. So use <code>yield</code> to turn the function into a generator, but precede it with <code>return</code> to terminate the generator before yielding anything.</p>
+<pre><code>&gt;&gt;&gt; def f():
+...     return
+...     yield
+... 
+&gt;&gt;&gt; list(f())
+[]
+</code></pre>
+<p>I'm not sure it's that much better than what you have -- it just replaces a no-op <code>if</code> statement with a no-op <code>yield</code> statement. But it is more idiomatic. Note that just using <code>yield</code> doesn't work.</p>
+<pre><code>&gt;&gt;&gt; def f():
+...     yield
+... 
+&gt;&gt;&gt; list(f())
+[None]
+</code></pre>
+<h3>Why not just use <code>iter(())</code>?</h3>
+<p>This question asks specifically about an empty <em>generator function</em>. For that reason, I take it to be a question about the internal consistency of Python's syntax, rather than a question about the best way to create an empty iterator in general.</p>
+<p>If question is actually about the best way to create an empty iterator, then you might agree with <a href="https://stackoverflow.com/a/26271684/577088">Zectbumo</a> about using <code>iter(())</code> instead. However, it's important to observe that <code>iter(())</code> doesn't return a function! It directly returns an empty iterable. Suppose you're working with an API that expects a callable that <em>returns</em> an iterable each time it's called, just like an ordinary generator function. You'll have to do something like this:</p>
+<pre><code>def empty():
+    return iter(())
+</code></pre>
+<p>(Credit should go to <a href="https://stackoverflow.com/a/13243922/577088">Unutbu</a> for giving the first correct version of this answer.)</p>
+<p>Now, you may find the above clearer, but I can imagine situations in which it would be less clear. Consider this example of a long list of (contrived) generator function definitions:</p>
+<pre><code>def zeros():
+    while True:
+        yield 0
+
+def ones():
+    while True:
+        yield 1
+
+...
+</code></pre>
+<p>At the end of that long list, I'd rather see something with a <code>yield</code> in it, like this:</p>
+<pre><code>def empty():
+    return
+    yield
+</code></pre>
+<p>or, in Python 3.3 and above (as suggested by <a href="https://stackoverflow.com/a/13243920/577088">DSM</a>), this:</p>
+<pre><code>def empty():
+    yield from ()
+</code></pre>
+<p>The presence of the <code>yield</code> keyword makes it clear at the briefest glance that this is just another generator function, exactly like all the others. It takes a bit more time to see that the <code>iter(())</code> version is doing the same thing.</p>
+<p>It's a subtle difference, but I honestly think the <code>yield</code>-based functions are more readable and maintainable.</p>
+<p>See also this great answer from <a href="https://stackoverflow.com/a/61496399/577088">user3840170</a> that uses <code>dis</code> to show another reason why this approach is preferable: it emits the fewest instructions when compiled.</p>
