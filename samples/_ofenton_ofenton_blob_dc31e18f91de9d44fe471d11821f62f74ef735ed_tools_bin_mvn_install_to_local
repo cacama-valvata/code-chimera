@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+# Install a file (typically a jar) to the local maven repository for testing
+# With thanks to http://stackoverflow.com/questions/4955635/how-to-add-local-jar-files-in-maven-project
+#
+# mvn install:install-file
+# -Dfile=<path-to-file>
+# -DgroupId=<group-id>
+# -DartifactId=<artifact-id>
+# -Dversion=<version>
+# -Dpackaging=<packaging>
+# -DgeneratePom=true
+
+import argparse
+import os
+import sys
+
+def main():
+    parser = argparse.ArgumentParser(description='install a file into the local maven repository for testing')
+    parser.add_argument('-f', '--file', action='store', dest='file', required=True, help='file to install')
+    parser.add_argument('-g', '--groupId', action='store', dest='group_id',required=True, help='maven group to install the file to')
+    parser.add_argument('-a', '--artifactId', action='store', dest='artifact_id', required=True, help='maven artifact for naming')
+    parser.add_argument('-v', '--version', action='store', dest='version', default='0.0.1', help='version to use, default=0.0.1')
+    parser.add_argument('-p', '--packaging', action='store', dest='packaging', default='jar', help='what was packaged, default=jar')
+    parser.add_argument('--generatePom', action='store_true', default=True, dest='generate_pom', help='add the pom to the repository')
+    args = parser.parse_args()
+
+    cmd = 'mvn install:install-file' \
+        + ' -Dfile=' + args.file \
+        + ' -DgroupId=' + args.group_id \
+        + ' -DartifactId=' + args.artifact_id \
+        + ' -Dversion=' + args.version \
+        + ' -Dpackaging='+ args.packaging \
+        + ' -DgeneratePom='+ ('true' if args.generate_pom else 'false')
+
+    print cmd
+    os.system(cmd)
+
+if __name__ == "__main__":
+    main()

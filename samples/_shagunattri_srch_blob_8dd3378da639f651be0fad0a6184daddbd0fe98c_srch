@@ -1,0 +1,116 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+import sys
+import webbrowser
+
+
+pm = sys.argv[1]
+input = sys.argv[2:]
+
+args = (' '.join(input))
+
+def usage():
+    print("srch - search from the commandline \n")
+    print("python srch <platform> <query> \n")
+    print('''platforms to search for
+
+            wiki,wikipedia              Search Wikipedia for query
+            so,stackoverflow            Search StackOverflow for query
+            g,google                    Search Google for query
+            r,reddit                    Search Reddit for query
+            ghub,github                 Search GitHub for query
+            dev,dev.to,devto            Search dev.to for query
+            medium,mdm,m                Search Medium for query
+            yt,ytube,youtube            Search Youtube for query
+            t,tw,twitter                Search Twitter for query
+            gfg                         Search GeeksforGeeks for query
+            st,stackexchange,stackx     Search Stackexchange for query
+            q,quora                     Search quora for query
+
+            Usage:
+
+            python srch help      # help menu
+            
+            python srch google what is  github commit signing\n''' )
+
+
+def wiki(args):
+    wikipedia = 'https://en.wikipedia.org/wiki/' + str(args)
+    webbrowser.open(wikipedia)
+
+def stackoverflow(args):
+    stackoverflow = 'https://stackoverflow.com/search?q=' + str(args)
+    webbrowser.open(stackoverflow)
+
+def google(args):
+    google = 'www.google.com/search?q=' + str(args)
+    webbrowser.open(google)
+
+def reddit(args):
+    reddit = 'https://www.reddit.com/search/?q=' + str(args)
+    webbrowser.open(reddit)
+    
+def github(args):
+    github = 'https://github.com/search?q=' + str(args)
+    webbrowser.open(github)
+
+def devto(args):  
+    devto = 'https://dev.to/search?q=' + str(args)
+    webbrowser.open(devto)
+    
+def medium(args):
+    medium = 'https://medium.com/search?q=' + str(args)
+    webbrowser.open(medium)
+
+def youtube(args):
+    youtube = 'https://www.youtube.com/results?search_query=' + str(args)
+    webbrowser.open(youtube)
+    
+def twitter(args):
+    twitter = 'https://twitter.com/search?q=' + str(args)
+    webbrowser.open(twitter)
+    
+def geeksforgeeks(args):
+    geeksforgeeks = 'https://www.geeksforgeeks.org/search/?q=' + str(args)
+    webbrowser.open(geeksforgeeks)
+    
+def stackexchange(args):    
+    stackexchange = 'https://stackexchange.com/search?q=' + str(args)
+    webbrowser.open(stackexchange)
+    
+def quora(args):
+    quora = 'https://www.quora.com/search?q=' + str(args)
+    webbrowser.open(quora)
+
+
+if pm == '--h' or pm == '--help' or pm == '-h' or pm == '-help' or pm == 'help' or pm == 'h':
+    usage()
+elif pm == "wiki" or pm == "wikipedia":
+    wiki(args)
+elif pm == "so" or pm == "stackoverflow":
+    stackoverflow(args)
+elif pm == "g" or pm == "google":
+    google(args)
+elif pm == "r" or pm == "reddit":
+    reddit(args)    
+elif pm == "ghub" or pm =="github":
+    github(args)    
+elif pm == "dev" or pm == "dev.to" or pm =="devto":
+    devto(args)
+elif pm == "medium" or pm == "mdm" or pm == "m":
+    medium(args)
+elif pm == "yt" or pm == "ytube" or pm == "youtube" or pm == "y":
+    youtube(args)
+elif pm == "t" or pm == "tw" or pm == "twitter":
+    twitter(args)
+elif pm == "gfg":
+    geeksforgeeks(args)
+elif pm == "st" or pm == "stackexchange" or pm == "stackx":
+    stackexchange(args)
+elif pm == "q" or pm == "quora":
+    quora(args)
+else:
+    print('Invalid command...\n\n')
+    usage()
+
+sys.exit()
