@@ -43,7 +43,7 @@ if __name__ == "__main__":
             if answer_id not in not_exist and not save_path.exists():
                 # revision_resp = requests.get(API_ENDPOINT + "/posts/" + str(answer_id) + "/revisions", params=query_args)
                 # resp_json = revision_resp.json()
-                resp_json = SITE.fetch('posts/396109/revisions', filter='dnzp4nYyxcbLfyMJb')
+                resp_json = SITE.fetch(f"posts/{answer_id}/revisions", filter='dnzp4nYyxcbLfyMJb')
 
                 # whether post exists on SO (info was returned from server)
                 exists = bool(resp_json.get("items"))
