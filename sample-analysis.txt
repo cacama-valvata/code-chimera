@@ -49,6 +49,7 @@ multiple tags for a single file: use slashes (e.g. `other_link/question`)
 
 THINGS TO PROBABLY IGNORE:
 - comments: unless they steal them too ig??
+- type annotations: down to preference kinda, don't change functionality (or do anything really)
 
 ==========================
 
@@ -77,6 +78,12 @@ other notes:
 - answer 63839503 is a read for sure lol
 - kennyhngo_Wizard101_DanceBot... copy pasted comments with links to other SO answers lol
 - isiglobal_gifmaker... link hehe
+
+==========================
+
+sample notes:
+
+- sample 1234/1244 (RC_RL_blob_a1...) are the same for 2 users
 
 ==========================
 
